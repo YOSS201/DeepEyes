@@ -1,0 +1,49 @@
+<div class="config-container mat-elevation-z6">
+  <h2>⚙️ Configuración del Software</h2>
+
+  <div class="form-group">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Idioma</mat-label>
+      <mat-select [(ngModel)]="idioma">
+        <mat-option *ngFor="let lang of idiomas" [value]="lang">{{ lang }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="form-group">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Zona Horaria</mat-label>
+      <mat-select [(ngModel)]="zonaHoraria">
+        <mat-option *ngFor="let zona of zonasHorarias" [value]="zona">{{ zona }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="form-group">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nivel de Seguridad</mat-label>
+      <mat-select [(ngModel)]="nivelSeguridad">
+        <mat-option *ngFor="let nivel of nivelesSeguridad" [value]="nivel">{{ nivel }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="checkbox-group">
+    <mat-checkbox [(ngModel)]="permitirNotificaciones">Permitir notificaciones</mat-checkbox>
+    <mat-checkbox [(ngModel)]="modoOscuro">Activar modo oscuro</mat-checkbox>
+  </div>
+
+  <div class="btn-guardar">
+    <button mat-flat-button color="primary" (click)="guardarConfiguracion()">
+      <mat-icon>save</mat-icon>
+      Guardar Configuración
+    </button>
+  </div>
+
+  <div class="btn-volver">
+    <button mat-stroked-button color="primary" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Ir a Inicio
+    </button>
+  </div>
+</div> 

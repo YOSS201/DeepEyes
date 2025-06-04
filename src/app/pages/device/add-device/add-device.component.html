@@ -1,0 +1,44 @@
+<mat-card class="device-card">
+  <mat-card-title>Agregar Nuevo Dispositivo</mat-card-title>
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Nombre del dispositivo</mat-label>
+      <input matInput [(ngModel)]="nuevoDispositivo.name" id="nombre">
+    </mat-form-field>
+    
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Tipo de Dispositivo</mat-label>
+      <input matInput [(ngModel)]="nuevoDispositivo.type" id="tipo">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Modelo del dispositivo</mat-label>
+      <input matInput [(ngModel)]="nuevoDispositivo.model" id="modelo">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="form-field full-width">
+      <mat-label>Estado</mat-label>
+      <mat-select [(ngModel)]="nuevoDispositivo.status">
+        <mat-option [value]="true">True</mat-option>
+        <mat-option [value]="false">False</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="form-field full-width">
+      <mat-label>Ubicación</mat-label>
+      <mat-select [(ngModel)]="nuevoDispositivo.location">
+        <mat-option *ngFor="let u of ubicaciones" [value]="u">{{ u }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    
+  </mat-card-content>
+
+  <mat-card-actions class="actions">
+    <button mat-raised-button color="primary" (click)="onSubmit()" class="action-btn">Guardar</button>
+    <!--Boton volver atras-->
+    <button mat-button color="warn" (click)="volverATabla()" class="action-btn">
+      <mat-icon>arrow_back</mat-icon> Atras
+    </button>
+  </mat-card-actions>
+</mat-card>

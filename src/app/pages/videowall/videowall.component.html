@@ -1,0 +1,47 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <h2>Menú</h2>
+    <h3>Alertas</h3>
+    <button mat-button [routerLink]="['/c/alert']">Ver Todo</button>
+    <mat-list>
+      <mat-list-item *ngFor="let alert of alerts">
+        <a [routerLink]="['/s/alertdetails/', alert.id]" style="background-color: beige;">{{ alert.status }} - [{{ alert.device.location }}]</a>
+      </mat-list-item>
+    </mat-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <div class="content">
+      <mat-toolbar color="primary">
+        <span>Videowall</span>
+      </mat-toolbar>
+
+      <!--  Vista de Cámara en directo -->
+      <div class="live-camera">
+        <h2>Streaming de la cámara</h2>
+        <div *ngIf="isStreamActive; else offlineTemplate">
+          <img 
+            [src]="safeVideoUrl" 
+            alt="Video en vivo"
+            (error)="handleStreamError()"
+            style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px;" 
+          />
+        </div>
+        <ng-template #offlineTemplate>
+          <div class="offline-message">Cámara desconectada</div>
+        </ng-template>
+      </div>
+      
+      <!-- Botones de grabación controlados por backend -->
+      <div style="margin-top: 10px;">
+        <button mat-raised-button color="warn" (click)="startRecording()" [disabled]="isRecording">
+          Iniciar grabación
+        </button>
+        <button mat-raised-button color="primary" (click)="stopRecording()" [disabled]="!isRecording">
+          Detener grabación
+        </button>
+      </div>
+      <button mat-button (click)="generateAlert()">ALERTA!</button>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
