@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from bson.objectid import ObjectId
-
+from your_module import generate_frames 
 
 from fastapi.responses import StreamingResponse
 import cv2
@@ -238,35 +238,65 @@ def generate_frames():
             logging.error(f"Error procesando frame: {e}")
 
 
+@app.get("/video_feed")
+def video_feed():
+    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+
 # ---- Grabar video alerta ----
-def grabar_video_alerta(path: Path, duracion=10, width=640, height=480):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(str(path), fourcc, 20.0, (width, height))
-    start_time = datetime.now()
+import cv2
+import logging
+from datetime import datetime, timedelta
+from pathlib import Path
 
-    while (datetime.now() - start_time).seconds < duracion:
-        with capture_lock:
-            ret, frame = video_capture.read()
-        if not ret:
-            logging.warning("No se pudo capturar frame durante grabación.")
-            continue
-        
-        # Procesar el frame igual que en generate_frames
-        try:
-            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)###############################################################################################################
-            #faces = detect_faces(gray) ###############################################################################################################
-            detections = detect_objects(frame)
-            
-            #draw_face_boxes(frame, faces) ###############################################################################################################
-            draw_object_boxes(frame, detections)
-            
-            out.write(frame)  # Grabar el frame procesado
-            
-        except Exception as e:
-            logging.error(f"Error procesando frame durante grabación: {e}")
+def grabar_video_alerta(path: Path, duracion: int = 10, width: int = 640, height: int = 480):
+    """
+    Graba un video procesando detecciones sobre cada frame durante un tiempo especificado.
 
-    out.release()
-    logging.info(f"Video guardado: {path.name}")
+    Args:
+        path (Path): Ruta donde se guardará el video.
+        duracion (int): Duración del video en segundos.
+        width (int): Ancho del video.
+        height (int): Alto del video.
+    """
+    try:
+        # Inicializa el objeto VideoWriter
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(str(path), fourcc, 20.0, (width, height))
+        if not out.isOpened():
+            logging.error("No se pudo inicializar el VideoWriter.")
+            return
+
+        logging.info(f"Iniciando grabación de alerta por {duracion} segundos en {path}")
+        fin_tiempo = datetime.now() + timedelta(seconds=duracion)
+
+        while datetime.now() < fin_tiempo:
+            with capture_lock:
+                ret, frame = video_capture.read()
+            if not ret:
+                logging.warning("No se pudo capturar un frame.")
+                continue
+
+            try:
+                # Redimensionar si el frame no tiene el tamaño esperado
+                if frame.shape[1] != width or frame.shape[0] != height:
+                    frame = cv2.resize(frame, (width, height))
+
+                # Procesamiento de detección
+                detections = detect_objects(frame)
+                draw_object_boxes(frame, detections)
+
+                out.write(frame)  # Graba el frame procesado
+
+            except Exception as e:
+                logging.exception("Error durante el procesamiento de un frame: %s", e)
+
+        logging.info(f"Grabación completada. Video guardado como: {path.name}")
+    except Exception as e:
+        logging.exception(f"Fallo al grabar video de alerta: {e}")
+    finally:
+        out.release()
 
 # ---- Conversión a MP4 (opcional) ----
 def convertir_a_mp4(entrada: Path, salida: Path):
@@ -443,6 +473,22 @@ async def get_users():
             "updatedAt": str(user["updatedAt"])
         })
     return users
+
+@app.post("/grabar_alerta")
+def endpoint_grabar_alerta():
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    video_path = VIDEOS_DIR / f"alerta_{now}.mp4"
+    threading.Thread(target=grabar_video_alerta, args=(video_path,)).start()
+    return {"message": "Grabación iniciada", "archivo": str(video_path.name)}
+
+def registrar_alerta_en_db(tipo_alerta: str, nivel: str, video_path: str):
+    alerta = {
+        "tipo": tipo_alerta,
+        "nivel": nivel,
+        "ruta_video": video_path,
+        "fecha": datetime.now()
+    }
+    db.alertas.insert_one(alerta)
 
 # Obtener Usuario Específico (GET)
 @app.get("/users/email/{user_email}", response_model=UserResponse2)
