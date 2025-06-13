@@ -1,0 +1,54 @@
+<div class="main-layout">
+  <mat-sidenav-container class="sidenav-container">
+    
+    <!-- Barra lateral -->
+    <mat-sidenav class="sidenav" mode="side" opened>
+      <div class="sidebar-header">
+        <mat-icon class="logo-icon">videocam</mat-icon>
+        <span class="logo-text">DEEP EYES</span>
+      </div>
+
+      <nav class="nav-links">
+        <button mat-button routerLink="/c/videowall" routerLinkActive="active-link">
+          <mat-icon>video_library</mat-icon>
+          <span>Videowall</span>
+        </button>
+
+        <button mat-button routerLink="/c/alert" routerLinkActive="active-link">
+          <mat-icon>warning</mat-icon>
+          <span>Alerta</span>
+        </button>
+
+        <button mat-button routerLink="/c/report" routerLinkActive="active-link">
+          <mat-icon>history</mat-icon>
+          <span>Reportes</span>
+        </button>
+
+        <button mat-button routerLink="/c/device" routerLinkActive="active-link">
+          <mat-icon>devices</mat-icon>
+          <span>Dispositivos</span>
+        </button>
+
+        <button mat-button routerLink="/c/ayuda" routerLinkActive="active-link">
+          <mat-icon>help_outline</mat-icon>
+          <span>Ayuda</span>
+        </button>
+
+        <button mat-button color="primary" [routerLink]="['/c/configuration']">
+          <mat-icon>settings</mat-icon> Ir a Configuración
+        </button>
+        
+        <button mat-button class="logout-btn" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </nav>
+    </mat-sidenav>
+
+    <!-- Contenido principal -->
+    <mat-sidenav-content class="content">
+      <router-outlet></router-outlet>
+    </mat-sidenav-content>
+
+  </mat-sidenav-container>
+</div>

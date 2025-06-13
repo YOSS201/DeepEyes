@@ -1,0 +1,100 @@
+<!--
+<div class="device-container">
+  <h2>Tabla de Dispositivos</h2>
+
+  <button mat-raised-button color="accent" (click)="router.navigate(['/add-device'])" class="add-device-btn">
+    Agregar Dispositivo
+  </button>
+
+  <table mat-table [dataSource]="device" class="mat-elevation-z8 full-width-table">
+
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef>Nombre</th>
+      <td mat-cell *matCellDef="let element">{{ element.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef>Estado</th>
+      <td mat-cell *matCellDef="let element">{{ element.estado }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="modelo">
+      <th mat-header-cell *matHeaderCellDef>Modelo</th>
+      <td mat-cell *matCellDef="let element">{{ element.modelo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="ubicacion">
+      <th mat-header-cell *matHeaderCellDef>Ubicación</th>
+      <td mat-cell *matCellDef="let element">{{ element.ubicacion }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td mat-cell *matCellDef="let element">
+        <button mat-button color="accent" (click)="editarDispositivo(element)">Editar</button>
+        <button mat-button color="warn" (click)="eliminarDispositivo(element)">Eliminar</button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="['nombre', 'estado', 'modelo', 'ubicacion', 'acciones']"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['nombre', 'estado', 'modelo', 'ubicacion', 'acciones'];"></tr>
+  </table>
+
+
+  <button mat-button (click)="back()" class="back-btn">
+    <mat-icon>logout</mat-icon> Ir a inicio
+  </button>
+
+</div>-->
+<div class="container">
+  <h2>Tabla de Dispositivos</h2>
+
+  <button mat-raised-button color="accent" (click)="router.navigate(['/s/add-device'])" class="add-device-btn">
+    Agregar Dispositivo
+  </button>
+  <mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.name }}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Status</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.status }}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="type">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Type</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.type || 'N/A'}}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="model">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Model</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.model || 'N/A'}}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="location">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Location</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.location || 'N/A' }}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="createdAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Created At</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.createdAt | date:'medium' }}</mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="updatedAt">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Updated At</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.updatedAt | date:'medium' }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <mat-header-cell *matHeaderCellDef>Acciones</mat-header-cell>
+      <mat-cell *matCellDef="let device">
+        <button mat-button color="accent" [routerLink]="['/s/add-device', device.id]">Editar</button>
+        <button mat-button color="warn" (click)="deleteDevice(device.id)">Eliminar</button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-table>
+  <mat-paginator [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator>
+  <button mat-button (click)="back()" class="back-btn">
+    <mat-icon>logout</mat-icon> Ir a inicio
+  </button>
+</div>

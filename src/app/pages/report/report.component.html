@@ -1,0 +1,13 @@
+<h2>Reporte de Alertas</h2>
+<table>
+  <tr>
+    <th>ID</th>
+    <th>Comentario</th>
+  </tr>
+  <tr *ngFor="let reporte of reportes">
+    <td>{{ reporte.id }}</td>
+    <td>{{ reporte.comentario }}</td>
+  </tr>
+</table>
+
+<button (click)="exportarExcel()">Exportar a Excel</button>

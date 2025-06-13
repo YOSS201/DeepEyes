@@ -1,0 +1,44 @@
+.config-container {
+  max-width: 520px;
+  margin: 40px auto;
+  padding: 32px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  font-family: 'Poppins', 'Roboto', sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin-bottom: 24px;
+  text-align: center;
+  color: #2e3c4f;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.checkbox-group {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+mat-checkbox {
+  margin: 6px 0;
+}
+
+.btn-guardar,
+.btn-volver {
+  text-align: center;
+  margin-top: 20px;
+}
+
+button mat-icon {
+  margin-right: 6px;
+}

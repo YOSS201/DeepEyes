@@ -1,0 +1,32 @@
+<div class="create-report-container">
+    <h2>Crear Reporte</h2>
+  
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Seleccionar Alerta Asociada</mat-label>
+      <mat-select [(ngModel)]="alertaSeleccionada">
+        <mat-option *ngFor="let alerta of alertasDisponibles" [value]="alerta">
+          {{ alerta }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Acción Realizada</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="accionRealizada"></textarea>
+    </mat-form-field>
+  
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Comentarios</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="comentarios"></textarea>
+    </mat-form-field>
+  
+    <button mat-raised-button color="primary" (click)="guardarReporte()">
+      Guardar Reporte
+    </button>
+    <!-- Botón Volver -->
+    <button mat-button (click)="goToReportTable()">
+      <mat-icon>logout</mat-icon> Atras
+    </button>
+  
+  </div>
+  
