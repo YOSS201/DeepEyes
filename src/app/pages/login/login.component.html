@@ -1,65 +1,51 @@
-<div class="login-container">
-  <div class="login-card">
-    <h2 class="title">Iniciar sesión</h2>
-    <!--
-    <form (ngSubmit)="onSubmit()">
-      <mat-form-field class="input-field" appearance="fill">
-        <mat-label>Usuario</mat-label>
-        <input matInput [(ngModel)]="username" name="username" required />
-      </mat-form-field>
+<!-- Fuente Montserrat para títulos impactantes -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet" />
 
-      <mat-form-field class="input-field" appearance="fill">
-        <mat-label>Contraseña</mat-label>
-        <input matInput type="password" [(ngModel)]="password" name="password" required />
-      </mat-form-field>
+<div class="main-container">
+  <!-- Mitad izquierda con imagen -->
+  <div class="image-side">
+    <div class="overlay-text">
+      <h1>Vigilancia Inteligente</h1>
+      <p>Donde la visión se convierte en prevención</p>
+    </div>
+  </div>
 
-      <button mat-raised-button color="primary" class="login-button" type="submit">Iniciar sesión</button>
-      
-      <p class="error-message" *ngIf="error">{{ error }}</p>
-    </form>
-  -->
+  <!-- Mitad derecha con el formulario -->
+  <div class="form-side">
+    <div class="login-card">
+      <h2 class="title">Iniciar sesión</h2>
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-             class="error-message">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-message">
           Valid email is required
         </div>
-      <mat-form-field class="input-field" appearance="fill">
-        <!--
-        <mat-label for="email">Email / Usuario</mat-label>
-        -->
-        <mat-label>Email</mat-label>
-        <input matInput
-          type="email" 
-          id="email" 
-          formControlName="email"
-          placeholder="Enter your email">
-        
-      </mat-form-field>
-      <!---->
-      <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-             class="error-message">
+
+        <mat-form-field class="input-field" appearance="fill">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" id="email" formControlName="email" placeholder="Enter your email" />
+        </mat-form-field>
+
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
           Password is required
         </div>
-      <mat-form-field class="input-field" appearance="fill">
-        <mat-label>Password</mat-label>
-        <input matInput
-          type="password" 
-          id="password" 
-          formControlName="password"
-          placeholder="Enter your password">
-        
-      </mat-form-field>
-  
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
-      
-      <button mat-raised-button color="primary" class="login-button" type="submit" [disabled]="loginForm.invalid">Iniciar sesión</button>
-    </form>
-    
-    <p class="register-link">
-      ¿No tienes cuenta? <a (click)="goToRegister()">Crear cuenta</a>
-    </p>
-    
+
+        <mat-form-field class="input-field" appearance="fill">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" id="password" formControlName="password" placeholder="Enter your password" />
+        </mat-form-field>
+
+        <div *ngIf="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <button mat-raised-button color="primary" class="login-button" type="submit" [disabled]="loginForm.invalid">
+          Iniciar sesión
+        </button>
+      </form>
+
+      <p class="register-link">
+        ¿No tienes cuenta? <a (click)="goToRegister()">Crear cuenta</a>
+      </p>
+    </div>
+  </div>
 </div>

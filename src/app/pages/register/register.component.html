@@ -1,43 +1,56 @@
-<div class="container">
-  <img src="assets/camera-icon.png" alt="camera" width="50">
-  <h1>DEEP EYES</h1>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
 
- <mat-card class="device-card">
-  <mat-card-title>Crear Cuenta</mat-card-title>
-  <mat-card-content>
-    <mat-form-field appearance="outline" class="form-field">
-      <mat-label>Nombre de usuario</mat-label>
-      <input matInput [(ngModel)]="newUser.name" id="nombre">
-    </mat-form-field>
-    
-    <mat-form-field appearance="outline" class="form-field">
-      <mat-label>Correo electrónico</mat-label>
-      <input matInput [(ngModel)]="newUser.email" id="tipo">
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="form-field">
-      <mat-label>Rol</mat-label>
-      <mat-select [(ngModel)]="newUser.role">
-        <mat-option value="admin">Admin</mat-option>
-        <mat-option value="operator">Operador</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="form-field">
-      <mat-label>Contraseña</mat-label>
-      <input matInput [(ngModel)]="newUser.password" id="tipo">
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="form-field">
-      <mat-label>Confirmar Contraseña</mat-label>
-      <input matInput [(ngModel)]="contra" id="tipo" >
-    </mat-form-field>
-
-    <!-- Convertir "Crear Cuenta" en un enlace clicable -->
-    <button mat-raised-button color="primary" class="full-width" (click)="onCreateAccountClick()">Crear Cuenta</button>    
-    <div class="create-account" style="margin-top: 10px; text-align: center;">
-      <button mat-button color="accent" [routerLink]="'/'" class="form">Regresar</button>
+<div class="main-container">
+  <!-- Mitad izquierda con imagen -->
+  <div class="image-side">
+    <div class="overlay-text">
+      <h1>Deep Eyes</h1>
+      <p>Protegiendo tu negocio en tiempo real</p>
     </div>
-    </mat-card-content>
-</mat-card>
+  </div>
+
+  <!-- Mitad derecha con formulario de registro -->
+  <div class="form-side">
+    <div class="device-card">
+      <mat-card-title>Crear Cuenta</mat-card-title>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Nombre de usuario</mat-label>
+          <input matInput [(ngModel)]="newUser.name" id="nombre">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Correo electrónico</mat-label>
+          <input matInput [(ngModel)]="newUser.email" id="tipo">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Rol</mat-label>
+          <mat-select [(ngModel)]="newUser.role">
+            <mat-option value="admin">Admin</mat-option>
+            <mat-option value="operator">Operador</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Contraseña</mat-label>
+          <input matInput [(ngModel)]="newUser.password" type="password">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Confirmar Contraseña</mat-label>
+          <input matInput [(ngModel)]="contra" type="password">
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" class="full-width" (click)="onCreateAccountClick()">
+  Crear Cuenta
+</button>
+
+<button mat-raised-button color="primary" class="full-width button-spacing" [routerLink]="'/'">
+  Regresar
+</button>
+        
+      </mat-card-content>
+    </div>
+  </div>
 </div>

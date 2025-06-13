@@ -1,47 +1,77 @@
-/* Estilos globales */
-* {
-  box-sizing: border-box;
+/* Reset básico */
+html, body {
+  height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
 }
 
-
-
+/* Fuente y cuerpo */
 body {
   font-family: 'Roboto', sans-serif;
-  
+  height: 100vh;
   background-color: #f4f7fc;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
 }
 
-.login-container {
+/* Contenedor principal dividido */
+.main-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  background: 
-    linear-gradient(to bottom, rgba(82, 89, 133, 0.7), rgba(0, 0, 0, 0.7)), /* Gradiente con transparencia */
-    url('../../../../public/assest/pexels-njeromin-11542516.jpg'); /* Imagen de fondo */
+  flex-direction: row;
+  height: 100vh;   /* ocupa toda la altura visible del navegador */
+  width: 100vw;    /* ocupa todo el ancho del navegador */
+  overflow: hidden;
+}
 
+/* Imagen del lado izquierdo */
+.image-side {
+  flex: 1;
+  background-image: url('../../../../public/assest/efd.PNG');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  height: 100%;       /* ✅ asegura que llene verticalmente */
+  min-height: 100vh;  /* ✅ garantiza altura mínima */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Capa de texto sobre la imagen */
+.overlay-text {
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+}
+
+.overlay-text h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.8em;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);
+  margin-bottom: 10px;
+}
+
+.overlay-text p {
+  font-size: 1.2em;
+  font-weight: 300;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Formulario lado derecho */
+.form-side {
+  flex: 1;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
 }
 
 .login-card {
-  background-color: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
   width: 100%;
-  text-align: center;
+  max-width: 400px;
 }
 
 .title {
@@ -49,6 +79,7 @@ body {
   color: #3f51b5;
   margin-bottom: 20px;
   font-weight: 600;
+  text-align: center;
 }
 
 mat-form-field.input-field {
@@ -56,21 +87,11 @@ mat-form-field.input-field {
   margin-bottom: 20px;
 }
 
-mat-label {
-  font-weight: 500;
-  color: #333;
-}
-
 input.mat-input-element {
   font-size: 1.1em;
   padding: 10px;
   border-radius: 4px;
   border: 1px solid #ccc;
-  transition: all 0.3s ease;
-}
-
-input.mat-input-element:focus {
-  border-color: #3f51b5;
 }
 
 button.mat-raised-button {
@@ -80,7 +101,6 @@ button.mat-raised-button {
   color: white;
   border-radius: 30px;
   font-size: 1.1em;
-  border: none;
   transition: background-color 0.3s ease;
 }
 
@@ -91,12 +111,14 @@ button.mat-raised-button:hover {
 .error-message {
   color: red;
   font-size: 0.9em;
-  margin-top: 15px;
+  margin-top: -10px;
+  margin-bottom: 10px;
 }
 
 .register-link {
   margin-top: 20px;
   font-size: 1em;
+  text-align: center;
 }
 
 .register-link a {
@@ -109,3 +131,26 @@ button.mat-raised-button:hover {
   text-decoration: underline;
 }
 
+/* Responsividad */
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .image-side {
+    height: 200px;
+  }
+
+  .form-side {
+    padding: 20px;
+  }
+
+  .overlay-text h1 {
+    font-size: 2em;
+  }
+
+  .overlay-text p {
+    font-size: 1em;
+  }
+}
