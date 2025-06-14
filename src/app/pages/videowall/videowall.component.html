@@ -1,76 +1,60 @@
-<mat-sidenav-container class="sidenav-container">
+<mat-sidenav-container class="sidenav-container no-scroll">
+  <!-- SIDENAV -->
   <mat-sidenav mode="side" opened class="sidenav">
-    <h2>Menú</h2>
+   
     <h3>Alertas</h3>
-    <button mat-button [routerLink]="['/c/alert']">Ver Todo</button>
-    <mat-list>
+
+    <button mat-stroked-button color="primary" [routerLink]="['/c/alert']">Ver Todo</button>
+
+    <mat-nav-list>
       <mat-list-item *ngFor="let alert of alerts">
-        <a [routerLink]="['/s/alertdetails/', alert.id]" style="background-color: beige;">{{ alert.status }} - [{{ alert.device.location }}]</a>
+        <a [routerLink]="['/s/alertdetails/', alert.id]">
+          {{ alert.status | uppercase }} - [{{ alert.device.location }}]
+        </a>
       </mat-list-item>
-    </mat-list>
+    </mat-nav-list>
   </mat-sidenav>
 
+  <!-- CONTENIDO PRINCIPAL -->
   <mat-sidenav-content>
     <div class="content">
       <mat-toolbar color="primary">
-        <span>Videowall</span>
+        <span>📹 Videowall</span>
       </mat-toolbar>
 
-      <!--  Vista de Cámara en directo 
-      <div class="live-camera">
-        <h2>Streaming de la cámara</h2>
-        <div *ngIf="isStreamActive; else offlineTemplate">
-          <img 
-            [src]="safeVideoUrl" 
-            alt="Video en vivo"
-            (error)="handleStreamError()"
-            style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px;" 
-          />
+      <div class="container-fixed">
+        <h1>📷 Cámaras</h1>
+
+        <div class="cameras-grid-fixed">
+          <div *ngFor="let camera of cameras" class="camera-card-fixed">
+            <h3>{{ camera.name }}</h3>
+
+            <div class="video-container-fixed">
+              <div *ngIf="camera.loading" class="loading-overlay">
+                <div class="spinner"></div>
+                <p>Conectando...</p>
+              </div>
+
+              <div *ngIf="camera.error && !camera.loading" class="error-overlay">
+                <div class="error-icon">!</div>
+                <p>{{ camera.error }}</p>
+              </div>
+
+              <img *ngIf="camera.imageSrc && !camera.loading && !camera.error"
+                   [src]="camera.imageSrc"
+                   alt="{{ camera.name }}"
+                   class="video-feed">
+            </div>
+          </div>
         </div>
-        <ng-template #offlineTemplate>
-          <div class="offline-message">Cámara desconectada</div>
-        </ng-template>
-      </div>-->
-      <div class="container">
-  <h1>CAMARAS</h1>
-  
-  <div class="cameras-grid">
-    <div *ngFor="let camera of cameras" class="camera-card">
-      <h3>{{camera.name}}</h3>
-      
-      <div class="video-container">
-        <!-- Estado de carga -->
-        <div *ngIf="camera.loading" class="loading-overlay">
-          <div class="spinner"></div>
-          <p>Conectando...</p>
-        </div>
-        
-        <!-- Mensaje de error -->
-        <div *ngIf="camera.error && !camera.loading" class="error-overlay">
-          <div class="error-icon">!</div>
-          <p>{{camera.error}}</p>
-        </div>
-        
-        <!-- Video feed -->
-        <img *ngIf="camera.imageSrc && !camera.loading && !camera.error" 
-             [src]="camera.imageSrc" 
-             alt="{{camera.name}}"
-             class="video-feed">
       </div>
-    </div>
-  </div>
-</div>
-      
-      <!-- Botones de grabación controlados por backend -->
-      <div style="margin-top: 10px;">
-        <button mat-raised-button color="warn" (click)="startRecording()" [disabled]="isRecording">
-          Iniciar grabación
-        </button>
-        <button mat-raised-button color="primary" (click)="stopRecording()" [disabled]="!isRecording">
-          Detener grabación
-        </button>
+
+      <!-- Botones de control -->
+      <div class="actions-fixed">
+        <button mat-raised-button color="warn" (click)="startRecording()" [disabled]="isRecording">⏺ Grabar</button>
+        <button mat-raised-button color="primary" (click)="stopRecording()" [disabled]="!isRecording">⏹ Detener</button>
+        <button mat-stroked-button color="accent" (click)="generateAlert()">⚠️ Alerta</button>
       </div>
-      <button mat-button (click)="generateAlert()">ALERTA!</button>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>
