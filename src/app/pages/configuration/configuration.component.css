@@ -1,44 +1,43 @@
 .config-container {
-  max-width: 520px;
-  margin: 40px auto;
-  padding: 32px;
-  border-radius: 16px;
+  max-width: 600px;
+  margin: auto;
+  padding: 2rem;
   background-color: #ffffff;
-  font-family: 'Poppins', 'Roboto', sans-serif;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-h2 {
-  margin-bottom: 24px;
-  text-align: center;
-  color: #2e3c4f;
-  font-weight: 600;
-}
-
-.form-group {
-  margin-bottom: 20px;
+  border-radius: 10px;
 }
 
 .full-width {
   width: 100%;
 }
 
-.checkbox-group {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
+.form-group {
+  margin-bottom: 20px;
 }
 
-mat-checkbox {
-  margin: 6px 0;
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .btn-guardar,
 .btn-volver {
-  text-align: center;
   margin-top: 20px;
+  text-align: center;
 }
 
-button mat-icon {
-  margin-right: 6px;
+/* Modo oscuro */
+.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
 }
+
+.dark-mode .config-container {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.dark-mode .mat-form-field-infix {
+  background-color: #2a2a2a;
+}
+

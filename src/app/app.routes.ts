@@ -13,6 +13,9 @@ import { ConfigurationComponent } from './pages/configuration/configuration.comp
 import { AuthGuard } from './auth.guard';
 import { LayoutComponent } from './layouts/layout/layout.component';
 import { EmptyLayoutComponent } from './layouts/empty-layout/empty-layout.component';
+import { HelpComponent } from './pages/help/help.component';
+
+
 
 export const routes: Routes = [
   { 
@@ -30,6 +33,7 @@ export const routes: Routes = [
       { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
       { path:'device',component:DeviceComponent, canActivate: [AuthGuard]},
       { path: 'report', component: ReportComponent, canActivate: [AuthGuard] },
+      { path: 'help', component: HelpComponent, canActivate: [AuthGuard] },
 
       { path:'configuration', component:ConfigurationComponent, canActivate: [AuthGuard]},
       { path: '', redirectTo: 'home', pathMatch: 'full' },

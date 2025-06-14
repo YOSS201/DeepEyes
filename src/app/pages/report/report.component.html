@@ -1,13 +1,38 @@
-<h2>Reporte de Alertas</h2>
-<table>
-  <tr>
-    <th>ID</th>
-    <th>Comentario</th>
-  </tr>
-  <tr *ngFor="let reporte of reportes">
-    <td>{{ reporte.id }}</td>
-    <td>{{ reporte.comentario }}</td>
-  </tr>
-</table>
+<div class="report-toolbar">
+  <h2> Reporte de Alertas</h2>
 
-<button (click)="exportarExcel()">Exportar a Excel</button>
+  <div class="toolbar-actions">
+    <button mat-raised-button color="primary" (click)="generarReporte()">
+      <mat-icon>description</mat-icon>
+      Generar Reporte
+    </button>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Reporte Automático</mat-label>
+      <mat-select [(ngModel)]="reporteAutomatico">
+        <mat-option [value]="true">Sí</mat-option>
+        <mat-option [value]="false">No</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-stroked-button color="accent" (click)="exportarExcel()">
+      <mat-icon>download</mat-icon>
+      Exportar a Excel
+    </button>
+  </div>
+</div>
+
+<table mat-table [dataSource]="reportes" class="mat-elevation-z2 full-width-table">
+  <ng-container matColumnDef="id">
+    <th mat-header-cell *matHeaderCellDef>ID</th>
+    <td mat-cell *matCellDef="let reporte">{{ reporte.id }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="comentario">
+    <th mat-header-cell *matHeaderCellDef>Comentario</th>
+    <td mat-cell *matCellDef="let reporte">{{ reporte.comentario }}</td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="['id', 'comentario']"></tr>
+  <tr mat-row *matRowDef="let row; columns: ['id', 'comentario'];"></tr>
+</table>

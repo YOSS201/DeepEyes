@@ -1,98 +1,35 @@
 .device-card {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-  
-  mat-card-title {
-    font-size: 1.8rem;
-    color: #333;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  mat-card-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .form-field {
-    width: 100%;
-  }
-  
-  .full-width {
-    width: 100%;
-  }
-  
-  mat-form-field {
-    margin-bottom: 15px;
-  }
-  
-  mat-select {
-    width: 100%;
-  }
-  
-  button.action-btn {
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 1rem;
-    width: 100%;
-  }
-  
-  mat-card-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    padding-top: 10px;
-  }
-  
-  mat-card-actions button {
-    width: 48%;
-  }
-  
-  mat-card-actions button:hover {
-    opacity: 0.9;
-  }
-  
-  mat-icon {
-    margin-right: 8px;
-  }
-  
-  /* Estilos para botones */
-  button.mat-raised-button {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  button.mat-button {
-    color: #e74c3c;
-    border: 1px solid #e74c3c;
-  }
-  
-  button.mat-button:hover {
-    background-color: #f1f1f1;
-  }
-  
-  /* Responsividad */
-  @media (max-width: 768px) {
-    mat-card {
-      padding: 15px;
-    }
-  
-    mat-card-title {
-      font-size: 1.5rem;
-    }
-  
-    button.action-btn {
-      font-size: 0.9rem;
-    }
-  
-    mat-card-actions button {
-      width: 100%;
-    }
-  }
-  
+  padding: 20px;
+  border-radius: 16px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.device-icon {
+  margin-right: 10px;
+  vertical-align: middle;
+  font-size: 28px;
+  color: #3f51b5;
+}
+
+.device-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.form-field {
+  flex: 1 1 45%;
+  min-width: 250px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.action-btn mat-icon {
+  margin-right: 4px;
+}

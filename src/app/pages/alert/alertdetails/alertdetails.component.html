@@ -1,30 +1,34 @@
-<!--
-<h2>Agregar Comentario</h2>
-<textarea [(ngModel)]="comentario" placeholder="Escribe un comentario..."></textarea>
-<br />
-<button (click)="guardar()">Guardar</button>
--->
 <div class="detalle-alerta-container">
-  <h2>Detalles de la Alerta</h2>
+  <h2>📢 Detalles de la Alerta</h2>
 
   <div class="contenido">
+    <!-- Imagen o video de la alerta -->
     <div class="video">
-      <img src="https://via.placeholder.com/400x200?text=Imagen+de+la+alerta" alt="Alerta" />
+     <img 
+       [src]="alert.video.file_path || 'https://via.placeholder.com/400x220?text=Imagen+no+disponible'"
+  alt="Imagen de la alerta" />
+
     </div>
 
+    <!-- Información de la alerta -->
     <div class="info">
-      <p><strong>Fecha y hora:</strong> {{ alert.createdAt }}</p>
-      <p><strong>Estado:</strong> {{alert.status}}</p>
-      <p><strong>Video ID:</strong> {{ alert.video.id }}</p>
-      <p><strong>File Path:</strong> {{ alert.video.file_path }}</p>
-      <p><strong>Dispositivo ID:</strong> {{ alert.device.id }}</p>
-      <p><strong>Dispositivo Nombre:</strong> {{ alert.device.name }}</p>
-      <p><strong>Dispositivo Lugar:</strong> {{ alert.device.location }}</p>
+      <mat-card>
+        <mat-card-content>
+          <p><strong>🕒 Fecha y hora:</strong> {{ alert.createdAt }}</p>
+          <p><strong>📌 Estado:</strong> {{ alert.status }}</p>
+          <p><strong>🎞 Video ID:</strong> {{ alert.video.id }}</p>
+          <p><strong>🗂 Ruta del archivo:</strong> {{ alert.video.file_path }}</p>
+          <p><strong>💻 Dispositivo ID:</strong> {{ alert.device.id }}</p>
+          <p><strong>📟 Nombre:</strong> {{ alert.device.name }}</p>
+          <p><strong>📍 Ubicación:</strong> {{ alert.device.location }}</p>
+        </mat-card-content>
+      </mat-card>
 
+      <!-- Botones de acción -->
       <div class="acciones">
-        <button mat-raised-button color="primary" (click)="confirmar()">Confirmar</button>
-        <button mat-raised-button color="warn" (click)="descartar()">Descartar</button>
-        <button mat-stroked-button (click)="volver()">Volver</button>
+        <button mat-raised-button color="primary" (click)="confirmar()"> Confirmar</button>
+        <button mat-raised-button color="warn" (click)="descartar()"> Descartar</button>
+        <button mat-stroked-button color="accent" (click)="volver()"> Volver</button>
       </div>
     </div>
   </div>

@@ -1,11 +1,22 @@
-table {
+.report-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 20px;
+}
+
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.full-width-table {
   width: 100%;
   border-collapse: collapse;
 }
-th, td {
-  border: 1px solid #ccc;
-  padding: 8px;
-}
-button {
-  margin-top: 10px;
+
+mat-form-field {
+  min-width: 150px;
 }

@@ -31,6 +31,9 @@ import { MatInputModule } from '@angular/material/input';
 import { routes } from './app.routes';
 import { AuthGuard } from './auth.guard';
 import { JwtInterceptor } from './jwt.interceptor';
+import { HelpComponent } from './pages/help/help.component';
+
+
 
 
 
@@ -84,7 +87,8 @@ import { JwtInterceptor } from './jwt.interceptor';
     MatInputModule,
     RouterModule.forRoot(routes),    
     AppComponent,
-    AlertDetailsComponent
+    AlertDetailsComponent,
+    HelpComponent
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }

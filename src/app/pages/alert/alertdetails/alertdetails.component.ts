@@ -7,6 +7,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../../services/alert.service';
 import { AlertCreate, AlertResponse } from '../../../models/AlertModel';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+
 
 
 @Component({
@@ -16,7 +19,9 @@ import { AlertCreate, AlertResponse } from '../../../models/AlertModel';
     CommonModule,
     RouterModule,
     MatDialogModule,
-    FormsModule
+    FormsModule,
+    MatCardModule,
+    MatButtonModule
    
     
   ],
@@ -55,7 +60,8 @@ export class AlertDetailsComponent implements OnInit {
       id: this.alertId,
       title: '',     // FastAPI no usa este campo para actualizar
       fecha: '',     // Igual
-      comentario: this.comentario
+      comentario: this.comentario,
+      
     };
     this.alertService.saveAlert(alertaActualizada).subscribe(() => {
       this.router.navigate(['/alert']);
