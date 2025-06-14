@@ -33,12 +33,12 @@ mat-sidenav-content {
 
 /* Cámara fija */
 .camera-card-fixed {
-  background-color: #fff;
+  background-color: #c3bad2;
   border-radius: 8px;
   padding: 10px;
   text-align: center;
   height: auto;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(40, 28, 129, 0.1);
 }
 
 .video-container-fixed {

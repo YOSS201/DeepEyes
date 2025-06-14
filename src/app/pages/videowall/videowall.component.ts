@@ -53,10 +53,6 @@ export class VideowallComponent implements OnInit, OnDestroy {
     { id: 'camera1', name: 'Cámara 1', imageSrc: '', error: '', loading: true, ws: null as WebSocket | null },
     { id: 'camera2', name: 'Cámara 2', imageSrc: '', error: '', loading: true, ws: null as WebSocket | null }
   ];
-
-  
-
-
   alerts!: AlertResponse[];
 
   constructor(

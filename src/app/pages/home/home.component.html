@@ -1,1 +1,40 @@
-<p>Home</p>
+<mat-card class="dashboard-container">
+  <h2 class="titulo">Dashboard</h2>
+  <mat-divider></mat-divider>
+
+  <div class="grid">
+    <!-- ALERTAS -->
+    <div class="seccion">
+      <h3>Alertas</h3>
+      <p><strong>Total:</strong> {{ totalAlertas }}</p>
+      <p>Pendientes: {{ alertas.pendientes }}</p>
+      <p>Confirmados: {{ alertas.confirmados }}</p>
+      <p>Descartados: {{ alertas.descartados }}</p>
+
+      <p><strong>Hoy: {{ alertasHoy }}</strong></p>
+      <p>Pendientes: {{ alertas.hoy.pendientes }}</p>
+      <p>Confirmados: {{ alertas.hoy.confirmados }}</p>
+      <p>Descartados: {{ alertas.hoy.descartados }}</p>
+    </div>
+
+    <!-- CAMARAS -->
+    <div class="seccion">
+      <h3>Cámaras</h3>
+      <p><strong>Totales:</strong> {{ camaras.length + camarasInactivas }}</p>
+      <p>Activos: {{ camarasActivas }}</p>
+      <p>Inactivos: {{ camarasInactivas }}</p>
+
+      <div class="camara-grid">
+        <img *ngFor="let cam of camaras" [src]="cam" class="cam-img" />
+        <button mat-raised-button class="add-btn">+</button>
+      </div>
+    </div>
+
+    <!-- REPORTES -->
+    <div class="seccion">
+      <h3>Reportes</h3>
+      <p><strong>Total:</strong> {{ totalReportes }}</p>
+      <p>Generar Automático: {{ generarAutomatico ? 'Sí' : 'No' }}</p>
+    </div>
+  </div>
+</mat-card>

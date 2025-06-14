@@ -1,38 +1,36 @@
 <div class="detalle-alerta-container">
-  <h2>📢 Detalles de la Alerta</h2>
+  <div class="sidebar">
+    <button class="btn-regresar" (click)="volver()">Regresar</button>
 
-  <div class="contenido">
-    <!-- Imagen o video de la alerta -->
-    <div class="video">
-     <img 
-       [src]="alert.video.file_path || 'https://via.placeholder.com/400x220?text=Imagen+no+disponible'"
-  alt="Imagen de la alerta" />
+    <div class="alert-info-box">
+      <h3>Detalles de la alerta:</h3>
+      <p><strong>🕒 Fecha y hora:</strong> {{ alert.createdAt }}</p>
+      <p><strong>📌 Estado:</strong> {{ alert.status }}</p>
+      <p><strong>🎞 Video ID:</strong> {{ alert.video.id }}</p>
+      <p><strong>🗂 Ruta del archivo:</strong> {{ alert.video.file_path }}</p>
+      <p><strong>💻 Dispositivo ID:</strong> {{ alert.device.id }}</p>
+      <p><strong>📟 Nombre:</strong> {{ alert.device.name }}</p>
+      <p><strong>📍 Ubicación:</strong> {{ alert.device.location }}</p>
+    </div>
+  </div>
 
+  <div class="main-content">
+    <h2>Alerta Detalles: <span class="alert-id">{{ alert.video.id }}</span></h2>
+    <hr />
+    <h3>Repetición</h3>
+    <div class="video-box">
+      <img 
+        [src]="alert.video.file_path || 'https://via.placeholder.com/400x220?text=Imagen+no+disponible'" 
+        alt="Imagen de la alerta" />
     </div>
 
-    <!-- Información de la alerta -->
-    <div class="info">
-      <mat-card>
-        <mat-card-content>
-          <p><strong>🕒 Fecha y hora:</strong> {{ alert.createdAt }}</p>
-          <p><strong>📌 Estado:</strong> {{ alert.status }}</p>
-          <p><strong>🎞 Video ID:</strong> {{ alert.video.id }}</p>
-          <p><strong>🗂 Ruta del archivo:</strong> {{ alert.video.file_path }}</p>
-          <p><strong>💻 Dispositivo ID:</strong> {{ alert.device.id }}</p>
-          <p><strong>📟 Nombre:</strong> {{ alert.device.name }}</p>
-          <p><strong>📍 Ubicación:</strong> {{ alert.device.location }}</p>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Botones de acción -->
-      <div class="acciones">
-        <button mat-raised-button color="primary" (click)="confirmar()"> Confirmar</button>
-        <button mat-raised-button color="warn" (click)="descartar()"> Descartar</button>
-        <button mat-stroked-button color="accent" (click)="volver()"> Volver</button>
-      </div>
+    <div class="acciones">
+      <button mat-raised-button color="primary" (click)="confirmar()">Confirmar</button>
+      <button mat-raised-button color="warn" (click)="descartar()">Descartar</button>
     </div>
   </div>
 </div>
+
 
 
 

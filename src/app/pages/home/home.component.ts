@@ -1,28 +1,48 @@
-import { AuthService } from './../../auth.service';
 import { Component } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { MatCard } from '@angular/material/card';
-//import { MatToolbar } from '@angular/material/toolbar';
 import { CommonModule } from '@angular/common';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { Router } from '@angular/router';
-import { RouterModule } from '@angular/router';
-import { MatDividerModule } from '@angular/material/divider'; 
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-home',
-  standalone:true,
+  standalone: true,
   imports: [
-    //MatCard,
+    CommonModule,
+    MatCardModule,
+    MatIconModule,
+    MatDividerModule,
+    MatButtonModule
   ],
-  //MatCard
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent {
+  totalAlertas = 10;
+  alertasHoy = 2;
+  alertas = {
+    pendientes: 1,
+    confirmados: 7,
+    descartados: 1,
+    hoy: {
+      pendientes: 1,
+      confirmados: 1,
+      descartados: 0
+    }
+  };
 
-  constructor() {}
-  
+  camaras = [
+    'assets/camara1.jpg',
+    'assets/camara2.jpg',
+    'assets/camara3.jpg'
+  ];
+
+  camarasActivas = 3;
+  camarasInactivas = 1;
+
+  totalReportes = 3;
+  generarAutomatico = true;
 }
+
 
