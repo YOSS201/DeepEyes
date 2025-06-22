@@ -52,9 +52,6 @@ export class AlertService {
     return this.http.get<AlertResponse[]>(this.apiUrl, { params });
   }
 
-  getDeviceNames(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/device-names`);
-  }
 
   getOneAlert(id: string): Observable<AlertResponse> {
     return this.http.get<AlertResponse>(`${this.apiUrl}${id}`);

@@ -14,7 +14,7 @@ html, body {
 
 .image-side {
   flex: 1;
-  background-image: url('../../../../public/assest/login.PNG');
+  background-image: url('../../../../public/assets/login.PNG');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

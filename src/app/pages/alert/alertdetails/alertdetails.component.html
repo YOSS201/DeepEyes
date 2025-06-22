@@ -18,16 +18,25 @@
     <h2>Alerta Detalles: <span class="alert-id">{{ alert.video.id }}</span></h2>
     <hr />
     <h3>Repetición</h3>
-    <div class="video-box">
-      <img 
-        [src]="alert.video.file_path || 'https://via.placeholder.com/400x220?text=Imagen+no+disponible'" 
-        alt="Imagen de la alerta" />
-    </div>
+    
+      <video controls width="640" height="360">
+  <source src="\assets\videos\alert_camera1_2025-06-19_10-46-40.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+
+    
 
     <div class="acciones">
       <button mat-raised-button color="primary" (click)="confirmar()">Confirmar</button>
       <button mat-raised-button color="warn" (click)="descartar()">Descartar</button>
     </div>
+
+      <video width="640" height="360" controls>
+     <source src="/assets/videos/mov.mp4" type="video/mp4">
+     Your browser does not support the video tag.
+   </video>
+
   </div>
 </div>
 

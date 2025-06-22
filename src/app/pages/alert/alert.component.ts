@@ -1,3 +1,4 @@
+import { DeviceService } from './../../services/devices.service';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
@@ -56,8 +57,12 @@ export class AlertComponent implements OnInit {
     { value: 'discarded', viewValue: 'Discarded' }
   ];
 
-  constructor(private router: Router, private alertService: AlertService, private fb: FormBuilder) {
-    this.filterForm = this.fb.group({
+  constructor(
+    private router: Router, 
+    private alertService: AlertService, 
+    private deviceService: DeviceService,
+    private fb: FormBuilder) {
+      this.filterForm = this.fb.group({
       status: [''],
       startDate: [null],
       endDate: [null],
@@ -76,8 +81,12 @@ export class AlertComponent implements OnInit {
   }
 
   loadDeviceNames(): void {
-    this.alertService.getDeviceNames().subscribe({
-      next: (names) => this.deviceNames = names,
+    this.deviceService.getDevices().subscribe({
+      next: (devices) => {
+        devices.forEach(device => {
+          this.deviceNames.push(device.name);          
+        });
+      },
       error: (err) => console.error('Error loading device names', err)
     });
   }

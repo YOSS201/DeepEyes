@@ -28,7 +28,7 @@ body {
 /* Imagen del lado izquierdo */
 .image-side {
   flex: 1;
-  background-image: url('../../../../public/assest/efd.PNG');
+  background-image: url('../../../../public/assets/efd.PNG');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

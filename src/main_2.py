@@ -34,7 +34,11 @@ from threading import Lock
 from ultralytics import YOLO
 
 import asyncio
+import httpx
 
+import time
+
+from collections import deque
 
 load_dotenv()  # Carga variables de entorno
 
@@ -82,11 +86,11 @@ MODELS_DIR = BASE_DIR / "modelos"
 VIDEOS_DIR = BASE_DIR / "videos"
 VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
 #
-YOLO_MODEL_PATH = MODELS_DIR / "my_model_person_v3.pt"
+YOLO_MODEL_PATH = MODELS_DIR / "my_model_person_v4.pt"
 
 # Cargar modelo
 yolo_model = YOLO(str(YOLO_MODEL_PATH))
-yolo_model.fuse()  # Optimiza el modelo para inferencia (opcional pero recomendado)
+yolo_model.fuse()  # Optimiza el modelo para inferencia (opcional pero igual le metemos)
 
 
 
@@ -109,9 +113,9 @@ yolo_model.fuse()  # Optimiza el modelo para inferencia (opcional pero recomenda
 #    "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
 #    "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"
 #
-class_names = [
-    "Product", "normal", "shoplifting"
-]
+# class_names = [
+#     "Product", "normal", "shoplifting"
+# ]
 
 # ---- Inicializar la cámara ---- ##################################################################3
 
@@ -139,7 +143,7 @@ def release_camera():
             logging.info("Cámara liberada")
 
 
-atexit.register(release_camera)
+#atexit.register(release_camera)
 
 # ---- Funciones de detección ----
 #def detect_faces(gray_frame):
@@ -208,71 +212,332 @@ def draw_object_boxes(frame, detections, threshold=0.8):
             # Etiqueta con fondo para mejor legibilidad
             cv2.putText(frame, label, (x1, y1 - 10), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+# Variable global para controlar el último tiempo de alerta
+# last_alert_time = None
+# async def trigger_alert(): #frame, detections
+#     global last_alert_time
+    
+#     # Verificar si ha pasado el tiempo mínimo entre alertas
+#     current_time = datetime.now()
+#     if last_alert_time and (current_time - last_alert_time) < timedelta(seconds=10):
+#         print("Alerta suprimida (cooldown activo)")
+#         return False
+    
+#     try:
+#         device = db.devices.find_one({"_id": ObjectId("681abdcd5e3e0959ba785ce9")})
+#         video = db.videos.find_one({"_id": ObjectId("681ba1a709f81d577139f29d")})
+#         # Guardar imagen de evidencia
+#         #_, buffer = cv2.imencode('.jpg', frame)
+#         #image_bytes = buffer.tobytes()
+        
+#         # Llamar a tu endpoint existente
+#         async with httpx.AsyncClient() as client:
+#             print("Se mandan los datos de alerta")
+#             response = await client.post(
+#                 "http://127.0.0.1:8000/alerts",
+#                 #files={"evidence": image_bytes},
+#                 data={
+#                     #"type": "theft",
+#                     #"confidence": max(box.conf.item() for box in detections.boxes),
+#                     #"timestamp": current_time.isoformat(),
+#                     #"location": "Cámara 1"  # Ajustar según cámara
+#                     "status": "pending",
+#                     #"alert_type": alert.alert_type,
+#                     #"priority": alert.priority,
+#                     "device": {
+#                         "id": str(device["_id"]),
+#                         "name": device.get("name"),
+#                         "location": device.get("location")
+#                     },
+#                     "video": {
+#                         "id": str(video["_id"]),
+#                         "file_path": video.get("file_path"),
+#                         "starts": video.get("starts"),
+#                         "ends": video.get("ends")
+#                     },
+#                     "createdAt": datetime.now(),
+#                     "updatedAt": datetime.now()
+#                 }
+#             )
+
+#         # Actualizar el tiempo de la última alerta
+#         last_alert_time = current_time
+#         print(f"Alerta enviada a las {current_time}")
+#         return response.status_code == 200
+        
+#     except Exception as e:
+#         print(f"Error enviando alerta: {e}")
+#         return False
+
 
 # Diccionario para almacenar los streams de video
 camera_streams = {
-    "camera1": 0,  # Puede ser un índice (0 para la primera cámara), o una URL/IP
-    "camera2": 1   # Segunda cámara
+    "camera1": 1,  # Puede ser un índice (0 para la primera cámara), o una URL/IP
+    "camera2": 2   # Segunda cámara
 }
 
-# Función para procesar los frames de cada cámara
+class AlertManager:
+    def __init__(self, cooldown_seconds=10, buffer_seconds=12, default_fps=30):
+        self.last_alert_time = {}
+        self.cooldown = timedelta(seconds=cooldown_seconds)
+        self.default_fps = default_fps
+        self.buffer_seconds = buffer_seconds  # Buffer for 12s (2s before + 10s after)
+        self.frame_buffers = {}  # {camera_id: deque([(timestamp, annotated_frame), ...])}
+        self.fps_measurements = {}  # {camera_id: list of frame intervals}
+        self.video_save_path = "assets/videos"
+        os.makedirs(self.video_save_path, exist_ok=True)
+        self.alert_trigger_time = {}  # {camera_id: timestamp of last alert trigger}
+
+    def _get_video_filename(self, camera_id):
+        """Generate unique filename for video based on timestamp and camera ID."""
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        return os.path.join(self.video_save_path, f"alert_{camera_id}_{timestamp}.mp4")
+
+    def _calculate_fps(self, camera_id):
+        """Calculate actual FPS based on recent frame intervals."""
+        if camera_id not in self.fps_measurements or len(self.fps_measurements[camera_id]) < 2:
+            return self.default_fps
+        intervals = self.fps_measurements[camera_id]
+        avg_interval = (sum(intervals) / len(intervals)) * 2 #############################################
+        fps = 1.0 / avg_interval if avg_interval > 0 else self.default_fps
+        return min(max(fps, 1.0), self.default_fps)
+
+    async def save_alert_video(self, camera_id, alert_id, frame_size):
+        """Save video clip: 2s before and 10s after alert."""
+        try:
+            # Use measured FPS for video playback
+            fps = self._calculate_fps(camera_id)
+            print(f"[{camera_id}] Using FPS: {fps:.2f} for video")
+            fourcc = cv2.VideoWriter_fourcc(*'H264')
+            video_path = self._get_video_filename(camera_id)
+            out = cv2.VideoWriter(video_path, fourcc, fps, frame_size)
+
+            #datos video
+            video_data = {
+                "file_path": video_path,
+                "starts": "2025-06-20T22:24:52.582Z", #datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                "ends": "2025-06-20T22:24:52.582Z"
+            }
+
+            # CREAR VIDEO
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "http://127.0.0.1:8000/videos/",
+                    json=video_data,  
+                    headers={"Content-Type": "application/json"},
+                    timeout=10.0
+                )
+
+            if response.is_success:
+                # Obtener los datos JSON de la respuesta
+                created_video = response.json()
+
+                print(f"VIDEO ID: {created_video["id"]} video creado exitosamente")
+                
+                # update_data = {
+                #     "status": "pending",
+                #     "device": {
+                #         "id": "681ab9a3b83466fc52a7ed9a"
+                #     },
+                #     "video": {
+                #         "id": created_video["id"]
+                #     }
+                # }
+                # alerta_update = str(alert_id)
+
+                # try:
+                #     async with httpx.AsyncClient() as client:
+                #         response = await client.patch(
+                #             "http://127.0.0.1:8000/alerts/" + alerta_update,
+                #             json=update_data,
+                #             headers={"Content-Type": "application/json"},
+                #             timeout=10.0
+                #         )
+                # except:
+                #     print(f"Error acutalizando alerta: {alerta_update}", e)
+                # if response.is_success:
+                #     print(f"Alerta actualizada: {alerta_update} video creado exitosamente")
+                # else:
+                #     print(f"Alerta actualizada: {alerta_update} video no creado- error")
+
+
+            # Wait to collect post-alert frames
+            await asyncio.sleep(self.buffer_seconds - 2.0)  # Wait for 10s of post-alert frames
+
+            # Write frames from buffer (2s before, trigger, 10s after)
+            if camera_id in self.frame_buffers and camera_id in self.alert_trigger_time:
+                trigger_time = self.alert_trigger_time[camera_id]
+                start_time = trigger_time - timedelta(seconds=2)  # 2s before
+                end_time = trigger_time + timedelta(seconds=self.buffer_seconds)  # 10s after
+                frame_count = 0
+                for timestamp, frame in sorted(self.frame_buffers[camera_id], key=lambda x: x[0]):
+                    if start_time <= timestamp <= end_time:
+                        out.write(frame)
+                        frame_count += 1
+                print(f"[{camera_id}] Wrote {frame_count} frames to video")
+
+            out.release()
+            print(f"[{camera_id}] Video saved at {video_path}")
+        except Exception as e:
+            print(f"[{camera_id}] Error saving video: {str(e)}")
+
+    async def trigger_alert(self, frame, camera_id):
+        current_time = datetime.now()
+        
+        # Check cooldown
+        if camera_id in self.last_alert_time:
+            time_since_last = current_time - self.last_alert_time[camera_id]
+            if time_since_last < self.cooldown:
+                print(f"[{camera_id}] Alerta suprimida (cooldown activo por {self.cooldown - time_since_last} más)")
+                return False
+        
+        try:
+            # Encode evidence image
+            #_, buffer = cv2.imencode('.jpg', frame)
+            alert_data = {
+                "status": "pending",
+                "device": {
+                    "id": "681ab9a3b83466fc52a7ed9a"
+                },
+                "video": {
+                    "id": "681ba110a20a2a1c5111addd"
+                }
+            }
+            
+            # Send alert to endpoint
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "http://127.0.0.1:8000/alerts/",
+                    json=alert_data,  
+                    headers={"Content-Type": "application/json"},
+                    timeout=10.0
+                )
+            
+            if response.is_success:
+                self.last_alert_time[camera_id] = current_time
+                self.alert_trigger_time[camera_id] = current_time  # Store trigger time
+                print(f"[{camera_id}] Alerta enviada exitosamente")
+                
+                # Save video clip (2s before + 10s after) using buffer
+                #annotated_frame = detections.plot()
+                frame_size = (frame.shape[1], frame.shape[0])  # (width, height)
+
+                # Obtener los datos JSON de la respuesta
+                created_alert = response.json()
+                alert_id = created_alert["id"]
+
+                asyncio.create_task(self.save_alert_video(camera_id, alert_id, frame_size))
+                return True
+            else:
+                print(f"[{camera_id}] Error al enviar alerta", response.text)
+                
+        except Exception as e:
+            print(f"[{camera_id}] Error enviando alerta: {str(e)}")
+        
+        return False
+
+    def update_frame_buffer(self, camera_id, frame, timestamp):
+        """Maintain a buffer of annotated frames for each camera."""
+        if camera_id not in self.frame_buffers:
+            self.frame_buffers[camera_id] = deque(maxlen=int(self.default_fps * self.buffer_seconds))
+        
+        self.frame_buffers[camera_id].append((timestamp, frame))
+
+# Initialize alert manager
+alert_manager = AlertManager(cooldown_seconds=10, buffer_seconds=12, default_fps=30)
+
+# Function to process camera frames
 async def process_camera(camera_id: str):
     cap = cv2.VideoCapture(camera_streams[camera_id])
     try:
         while True:
+            start_time = time.time()
             ret, frame = cap.read()
             if not ret:
                 break
             
-            # Detección de objetos
+            # Object detection
             results = yolo_model(frame, verbose=False)
+            detections = results[0]
+            annotated_frame = detections.plot()
+            current_time = datetime.now()
+
+            # Update frame buffer with annotated frame
+            alert_manager.update_frame_buffer(camera_id, annotated_frame, current_time)
             
-            # Dibujar resultados
-            annotated_frame = results[0].plot()
+            # Update FPS measurement
+            frame_time = time.time() - start_time
+            if camera_id not in alert_manager.fps_measurements:
+                alert_manager.fps_measurements[camera_id] = deque(maxlen=100)
+            alert_manager.fps_measurements[camera_id].append(frame_time)
             
-            # Convertir a JPEG
+            # Check for relevant detections
+            for box in detections.boxes:
+                class_id = int(box.cls.item())
+                class_name = detections.names[class_id]
+                conf = box.conf.item()
+                
+                # Alert condition
+                if class_name == "shoplifting" and conf > 0.55: 
+                    await alert_manager.trigger_alert(frame, camera_id)
+                    break  # Only one alert per frame
+
+            # Convert to JPEG for streaming
             _, buffer = cv2.imencode('.jpg', annotated_frame)
             yield buffer.tobytes()
             
-            await asyncio.sleep(0.033)  # ~30 FPS
-            
+            # Sleep to avoid overloading the system
+            await asyncio.sleep(0.01)  # Minimal sleep to yield control
     except Exception as e:
         print(f"Error en cámara {camera_id}: {e}")
     finally:
         cap.release()
 
-
 # ---- Generar transmisión ----
-async def generate_frames():
-    init_camera()  # Asegurar que la cámara esté encendida
-    while camera_active:  # Solo mientras la cámara esté activa
-        with capture_lock:
-            if video_capture is None or not video_capture.isOpened():
-                break
-            ret, frame = video_capture.read()
+# async def generate_frames():
+#     init_camera()  # Asegurar que la cámara esté encendida
+#     while camera_active:  # Solo mientras la cámara esté activa
+#         with capture_lock:
+#             if video_capture is None or not video_capture.isOpened():
+#                 break
+#             ret, frame = video_capture.read()
         
-        if not ret:
-            logging.warning("No se capturó el frame.")
-            continue
+#         if not ret:
+#             logging.warning("No se capturó el frame.")
+#             continue
         
-        try:
-            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)###############################################################################################################
-            #faces = detect_faces(gray) ###############################################################################################################
-            detections = detect_objects(frame)
+#         try:
+#             #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)###############################################################################################################
+#             #faces = detect_faces(gray) ###############################################################################################################
+#             detections = detect_objects(frame)
+#             logging.info("1")
+#             # Verificar cada detección
+#             for box in detections.boxes:
+#                 class_id = int(box.cls.item())
+#                 class_name = yolo_model.names[class_id]
+#                 conf = box.conf.item()
+#                 logging.error("2")
+#                 # Si es un hurto y confianza alta
+#                 if class_name == "shoplifting" and conf > 0.70:  # Ajusta el umbral
+#                     print("Detección shoplifting > 70%")
+#                     await trigger_alert() #frame, detections
+#                     break  # Solo una alerta por frame
 
-            #draw_face_boxes(frame, faces) ###############################################################################################################
-            draw_object_boxes(frame, detections)
 
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                continue
 
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-        except Exception as e:
-            logging.error(f"Error procesando frame: {e}")
+#             #draw_face_boxes(frame, faces) ###############################################################################################################
+#             draw_object_boxes(frame, detections)
+
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             if not ret:
+#                 continue
+
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+#         except Exception as e:
+#             logging.error(f"Error procesando frame: {e}")
         
-        await asyncio.sleep(0.2)  # Controlar tasa de frames
+#         await asyncio.sleep(0.2)  # Controlar tasa de frames
 
 
 
@@ -355,8 +620,14 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: str):
         print(f"Cliente {camera_id} desconectado")
     except Exception as e:
         print(f"Error en cámara {camera_id}: {e}")
-    finally:
-        await websocket.close()
+    # finally:
+    #     try:
+    #         # Verificar si la conexión todavía está activa antes de cerrar
+    #         if websocket.client_state != "disconnected":
+    #             await websocket.close()
+    #     except Exception as e:
+    #         print(f"Error al cerrar WebSocket para cámara {camera_id}: {e}")
+
 
 
 # Endpoint para obtener el video en streaming
@@ -368,32 +639,33 @@ async def root():
     <body>
         <h1>Servidor funcionando ✅</h1>
         <p><a href="/video">Ver transmisión en vivo</a></p>
+        <p><a href="/docs">Ir a Docs</a></p>
     </body></html>
     """
 
-@app.get("/video")
-async def video():
-    if not camera_active:
-        init_camera()
-    logging.info("Cliente conectado a /video")
-    return StreamingResponse(
-        generate_frames(), 
-        media_type="multipart/x-mixed-replace; boundary=frame"
-    )
+# @app.get("/video")
+# async def video():
+#     if not camera_active:
+#         init_camera()
+#     logging.info("Cliente conectado a /video")
+#     return StreamingResponse(
+#         generate_frames(), 
+#         media_type="multipart/x-mixed-replace; boundary=frame"
+#     )
 
-@app.post("/camera/start")
-async def start_camera():
-    init_camera()
-    return {"message": "Cámara encendida", "status": camera_active}
+# @app.post("/camera/start")
+# async def start_camera():
+#     init_camera()
+#     return {"message": "Cámara encendida", "status": camera_active}
 
-@app.post("/camera/stop")
-async def stop_camera():
-    release_camera()
-    return {"message": "Cámara apagada", "status": camera_active}
+# @app.post("/camera/stop")
+# async def stop_camera():
+#     release_camera()
+#     return {"message": "Cámara apagada", "status": camera_active}
 
-@app.get("/camera/status")
-async def camera_status():
-    return camera_active
+# @app.get("/camera/status")
+# async def camera_status():
+#     return camera_active
 
 #@app.get("/grabar-alerta")
 #async def grabar_alerta(duracion: int = 10):
@@ -420,10 +692,10 @@ async def stop_recording():
         print("Error al detener grabación:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.on_event("shutdown")
-def shutdown_event():
-    release_camera()
-    logging.info("Liberando recursos de la cámara al cerrar la aplicación")
+# @app.on_event("shutdown")
+# def shutdown_event():
+#     release_camera()
+#     logging.info("Liberando recursos de la cámara al cerrar la aplicación")
 
 
 
@@ -516,6 +788,7 @@ async def get_user_email(user_email: str):
         "createdAt": user["createdAt"],
         "updatedAt": user["updatedAt"]
     }
+
 # Obtener Usuario Específico (GET)
 @app.get("/users/id/{user_id}", response_model=UserResponse)
 async def get_user_id(user_id: str):
@@ -924,9 +1197,28 @@ async def update_alert(alert_id: str, alert_update: AlertUpdate):
     if not db.videos.find_one({"_id": ObjectId(alert_update.video.id)}):
         raise HTTPException(status_code=400, detail="Video not found")
     
-    update_data = alert_update.model_dump(exclude_unset=True)
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No data provided for update")
+    device = db.device.find_one({"_id": ObjectId(alert_update.device.id)})
+    video = db.video.find_one({"_id": ObjectId(alert_update.video.id)})
+    
+    #update_data = alert_update.model_dump(exclude_unset=True)
+    update_data = {
+        "status": alert_update.status,
+        #"alert_type": alert.alert_type,
+        #"priority": alert.priority,
+        "device": {
+            "id": str(device["_id"]),
+            "name": device.name,
+            "location": device.location
+        },
+        "video": {
+            "_id": str(video["_id"]),
+            "file_path": video.get("file_path"),
+            "starts": video.get("starts"),
+            "ends": video.get("ends")
+        },
+    }
+    # if not update_data:
+    #     raise HTTPException(status_code=400, detail="No data provided for update")
     
     
     

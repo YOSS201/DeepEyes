@@ -132,7 +132,7 @@ export class VideowallComponent implements OnInit, OnDestroy {
  ////termina nuevo
 
   ngOnDestroy() {
-    this.stopCamera();
+    // this.stopCamera();
     this.destroy$.next();
     this.destroy$.complete();
     // Opcional: Llamar a API para apagar cámara si es necesario
@@ -168,33 +168,33 @@ export class VideowallComponent implements OnInit, OnDestroy {
   }
 
 
-  private initializeCamera() {
-    // Forzar nuevo stream con parámetro aleatorio
-    this.cacheBuster = Date.now();
-    const uniqueStreamUrl = `${this.streamUrl}?cb=${this.cacheBuster}`;
+  // private initializeCamera() {
+  //   // Forzar nuevo stream con parámetro aleatorio
+  //   this.cacheBuster = Date.now();
+  //   const uniqueStreamUrl = `${this.streamUrl}?cb=${this.cacheBuster}`;
     
-    this.safeVideoUrl = this.sanitizer.bypassSecurityTrustUrl(uniqueStreamUrl);
-    this.isStreamActive = true;
-  }
+  //   this.safeVideoUrl = this.sanitizer.bypassSecurityTrustUrl(uniqueStreamUrl);
+  //   this.isStreamActive = true;
+  // }
 
 
 
-  stopCamera() {
-    this.http.post(`${this.url}/camera/stop`, {})
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          console.log('Cámara detenida correctamente');
-          this.isStreamActive = false;
-          // Limpiar URL para evitar frames congelados
-          this.safeVideoUrl = undefined;
-        },
-        error: (err) => {
-          console.error('Error al detener cámara:', err);
-          this.isStreamActive = false;
-        }
-      });
-  }
+  // stopCamera() {
+  //   this.http.post(`${this.url}/camera/stop`, {})
+  //     .pipe(takeUntil(this.destroy$))
+  //     .subscribe({
+  //       next: () => {
+  //         console.log('Cámara detenida correctamente');
+  //         this.isStreamActive = false;
+  //         // Limpiar URL para evitar frames congelados
+  //         this.safeVideoUrl = undefined;
+  //       },
+  //       error: (err) => {
+  //         console.error('Error al detener cámara:', err);
+  //         this.isStreamActive = false;
+  //       }
+  //     });
+  // }
 
 
   checkCameraStatus() {
@@ -224,15 +224,15 @@ export class VideowallComponent implements OnInit, OnDestroy {
     tryConnect();
   }*/
 
-  handleStreamError() {
-    console.log('Error en el stream, reintentando...');
-    this.isStreamActive = false;
+  // handleStreamError() {
+  //   console.log('Error en el stream, reintentando...');
+  //   this.isStreamActive = false;
     
-    // Reintentar después de 1 segundo
-    timer(1000).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => this.initializeCamera());
-  }
+  //   // Reintentar después de 1 segundo
+  //   timer(1000).pipe(
+  //     takeUntil(this.destroy$)
+  //   ).subscribe(() => this.initializeCamera());
+  // }
 
 
 

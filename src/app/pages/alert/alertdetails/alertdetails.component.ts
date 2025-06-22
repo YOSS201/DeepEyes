@@ -1,4 +1,4 @@
-import { Component, Inject,OnInit } from '@angular/core';
+import { Component, ElementRef, Inject,OnInit, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -9,6 +9,11 @@ import { AlertService } from '../../../services/alert.service';
 import { AlertCreate, AlertResponse } from '../../../models/AlertModel';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { VgApiService, VgCoreModule } from '@videogular/ngx-videogular/core';
+import { VgControlsModule } from '@videogular/ngx-videogular/controls';
+import { VgOverlayPlayModule } from '@videogular/ngx-videogular/overlay-play';
+
 
 
 
@@ -21,8 +26,8 @@ import { MatButtonModule } from '@angular/material/button';
     MatDialogModule,
     FormsModule,
     MatCardModule,
-    MatButtonModule
-   
+    MatButtonModule,
+    MatIconModule,
     
   ],
   templateUrl: './alertdetails.component.html',
@@ -32,6 +37,8 @@ export class AlertDetailsComponent implements OnInit {
   alertId: string | null = null;
   comentario: string = '';
   alertdetails:any
+
+  videoUrl = "../../../../videos_alert/hoy16/alert_camera2_2025-06-16_13-51-45.mp4";
 
   alert!: AlertResponse;
 
@@ -43,7 +50,9 @@ export class AlertDetailsComponent implements OnInit {
   ) {
     const nav = this.location.getState() as any;
     this.alertdetails = nav.alertdetails;
+    this.videoUrl = "../../../../videos_alert/hoy16/alert_camera1_2025-06-16_11-42-15.mp4";
   }
+
 
   ngOnInit(): void {
     this.alertId = this.route.snapshot.paramMap.get('id');
@@ -54,6 +63,7 @@ export class AlertDetailsComponent implements OnInit {
       }
     })
   }
+
 
   guardar() {
     const alertaActualizada = {
