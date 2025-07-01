@@ -35,7 +35,7 @@ import { MatSort } from '@angular/material/sort';
   styleUrls: ['./device.component.css']
 })
 export class DeviceComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'status', 'type', 'model', 'location', 'createdAt', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['name', 'status', 'position', 'type', 'model', 'location', 'createdAt', 'updatedAt', 'actions'];
   dataSource = new MatTableDataSource<DeviceResponse>();
 
   devices: DeviceResponse[] = [];

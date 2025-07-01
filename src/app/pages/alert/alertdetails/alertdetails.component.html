@@ -4,38 +4,39 @@
 
     <div class="alert-info-box">
       <h3>Detalles de la alerta:</h3>
-      <p><strong>🕒 Fecha y hora:</strong> {{ alert.createdAt }}</p>
+      <p><strong>🎞 ID alerta:</strong> {{ alert.id }}</p>
+      <p><strong>🕒 Fecha y hora:</strong> {{ alert.createdAt  | date:'medium' }}</p>
       <p><strong>📌 Estado:</strong> {{ alert.status }}</p>
-      <p><strong>🎞 Video ID:</strong> {{ alert.video.id }}</p>
-      <p><strong>🗂 Ruta del archivo:</strong> {{ alert.video.file_path }}</p>
-      <p><strong>💻 Dispositivo ID:</strong> {{ alert.device.id }}</p>
-      <p><strong>📟 Nombre:</strong> {{ alert.device.name }}</p>
+      <!-- <p><strong>🎞 Video ID:</strong> {{ alert.video.id }}</p> -->
+      <p><strong>🗂 Ruta del video:</strong> {{ alert.video }}</p>
+      <p><strong>📷 Cámara ID:</strong> {{ alert.device.id }}</p>
+      <p><strong>📟 Cámara Nombre:</strong> {{ alert.device.name }}</p>
       <p><strong>📍 Ubicación:</strong> {{ alert.device.location }}</p>
+      <!-- <p><strong>📍 tiene backup?:</strong> {{ alert.video_backup || "NO" }}</p> -->
     </div>
   </div>
 
   <div class="main-content">
-    <h2>Alerta Detalles: <span class="alert-id">{{ alert.video.id }}</span></h2>
+    <h2>Alerta Detalles: <span class="alert-id"></span></h2>
     <hr />
     <h3>Repetición</h3>
-    
-      <video controls width="640" height="360">
-  <source src="\assets\videos\alert_camera1_2025-06-19_10-46-40.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
-
-    
+      <video *ngIf="showVideo" width="640" height="480" #videoPlayer controls>
+        <source [src]="'http://127.0.0.1:8000/get_video/' + alert.video + '?t=' + timestamp" type="video/mp4">
+        <!-- <source [src]="this.alert.video" type="video/mp4"> -->
+        Your browser does not support the video tag.
+      </video>
+    existe? {{this.videoExists}}
 
     <div class="acciones">
-      <button mat-raised-button color="primary" (click)="confirmar()">Confirmar</button>
-      <button mat-raised-button color="warn" (click)="descartar()">Descartar</button>
+      <button mat-button color="primary" (click)="cambiar_estado('confirmed')">Confirmar</button>
+      <button mat-button color="warn" (click)="cambiar_estado('discarded')">Descartar</button>
+      <button mat-raised-button color="warn" (click)="cambiar_estado('pending')">Pendiente</button>
     </div>
 
-      <video width="640" height="360" controls>
-     <source src="/assets/videos/mov.mp4" type="video/mp4">
+      <!-- <video width="640" height="360" controls>
+     <source src="/assets/videos\alert_camera1_2025-06-22_18-57-27.mp4" type="video/mp4">
      Your browser does not support the video tag.
-   </video>
+   </video> -->
 
   </div>
 </div>

@@ -13,6 +13,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { VgApiService, VgCoreModule } from '@videogular/ngx-videogular/core';
 import { VgControlsModule } from '@videogular/ngx-videogular/controls';
 import { VgOverlayPlayModule } from '@videogular/ngx-videogular/overlay-play';
+import { HttpClient } from '@angular/common/http';
+import { DomSanitizer } from '@angular/platform-browser';
 
 
 
@@ -37,20 +39,31 @@ export class AlertDetailsComponent implements OnInit {
   alertId: string | null = null;
   comentario: string = '';
   alertdetails:any
+  videoLoading = false;
+  videoError = false;
+  videoUrl = '';
 
-  videoUrl = "../../../../videos_alert/hoy16/alert_camera2_2025-06-16_13-51-45.mp4";
+  videoExists = false;
+
+  timestamp = Date.now();
+  @ViewChild('videoPlayer') videoPlayerRef!: ElementRef<HTMLVideoElement>;
+  showVideo = true;
+
 
   alert!: AlertResponse;
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    // private router: Router,
     private alertService: AlertService,
-    private location: Location
+    private location: Location,
+    // private http: HttpClient,
+    private sanitizer: DomSanitizer
+
   ) {
     const nav = this.location.getState() as any;
     this.alertdetails = nav.alertdetails;
-    this.videoUrl = "../../../../videos_alert/hoy16/alert_camera1_2025-06-16_11-42-15.mp4";
+    // this.videoUrl = "../../../../videos_alert/hoy16/alert_camera1_2025-06-16_11-42-15.mp4";
   }
 
 
@@ -58,11 +71,115 @@ export class AlertDetailsComponent implements OnInit {
     this.alertId = this.route.snapshot.paramMap.get('id');
 
     this.alertService.getOneAlert(this.alertId!).subscribe({
-      next: (data) => {
-        this.alert = data;
-      }
-    })
+      next: (alert) => {
+        this.alert = alert;
+        this.alert.video = this.extractVideoName(alert.video)
+        this.checkAndLoadVideo();
+        //this.videoUrl = "/" + this.alert.video;
+        //this.alert.video = `http://127.0.0.1:8000/get_video/${this.extractVideoName(alert.video)}`;
+
+        //this.reloadVideo(`http://127.0.0.1:8000/get_video/${this.extractVideoName(alert.video)}`);
+      },
+      error: (err) => console.error('Error loading alert:', err)
+    });
   }
+
+  private checkAndLoadVideo() {
+    const videoName = this.alert.video;
+    //const localVideoPath = this.alert.video; //`assets/videos/${videoName}`;
+    
+    this.videoLoading = true;
+    this.videoError = false;
+
+    // 1. Primero verificar si existe localmente
+    this.alertService.checkVideoExists2(videoName).subscribe({
+      next: (response) => {
+        // const exists = response.exists;  // Accede a la propiedad "exists"
+        // alert("¿Existe el video? " + exists + ", Tipo: " + typeof exists);
+        this.videoExists = response.exists;
+        if (this.videoExists) {
+          // 1. Video local existe
+          this.videoUrl = videoName;
+          this.loadVideo();
+        } else if (this.alert.video_backup) {
+          // 2. Si no existe localmente pero tiene backup en la nube
+          this.downloadAndLoadCloudVideo(videoName);
+        } else {
+          // 3. No hay video disponible
+          alert("erorr");
+          this.handleVideoError();
+        }
+      },
+      error: (e) => console.error("error al verificar existencia de video: " + e)
+    });
+    
+    // this.alertService.checkVideoExists(videoName).subscribe({
+    //   next: (exists) => {
+    //     alert("existe?: "+ exists)
+    //     if (exists) {
+    //       // 1. Video local existe
+    //       this.videoUrl = videoName;
+    //       this.loadVideo();
+    //     } else if (this.alert.video_backup) {
+    //       // 2. Si no existe localmente pero tiene backup en la nube
+    //       this.downloadAndLoadCloudVideo(videoName);
+    //     } else {
+    //       // 3. No hay video disponible
+    //       alert("erorr");
+    //       this.handleVideoError();
+    //     }
+    //   },
+    //   error: () => this.handleVideoError()
+    // });
+  }
+
+  private downloadAndLoadCloudVideo(videoName: string): void {
+    this.alertService.downloadVideoFromCloud(this.alertId!, videoName).subscribe({
+      next: () => {
+        // Video descargado, intentar cargar de nuevo
+        this.alert.video = videoName//`assets/videos/${videoName}`;
+        this.loadVideo();
+      },
+      error: () => this.handleVideoError()
+    });
+  }
+
+  private loadVideo(): void {
+    const videoElement = this.videoPlayerRef.nativeElement;
+    
+    // Limpiar fuente anterior
+    videoElement.src = '';
+    
+    // Asignar nueva fuente con timestamp para evitar cache
+    //http://127.0.0.1:8000/get_video/video-name
+    //this.videoUrl = `http://127.0.0.1:8000/get_video/${this.videoUrl}?t=${Date.now()}`;
+    //this.alert.video = `http://127.0.0.1:8000/get_video/${this.extractVideoName(this.alert.video)}`;
+    videoElement.src = `http://127.0.0.1:8000/get_video/${this.alert.video}`; //this.alert.video;//this.videoUrl;
+    
+    videoElement.load();
+    this.videoLoading = false;
+    
+    videoElement.onerror = () => this.handleVideoError();
+  }
+
+  private handleVideoError(): void {
+    this.videoLoading = false;
+    this.videoError = true;
+    console.error('Error loading video');
+  }
+
+  // Extrae el nombre del video de la ruta (ej: "assets/videos/video1.mp4" → "video1.mp4")
+  private extractVideoName(fullPath: string): string {
+    return fullPath.split('/').pop() || '';
+  }
+
+  reloadVideo(videoPath: string) {
+    const videoElement = this.videoPlayerRef.nativeElement;
+    videoElement.src = videoPath + '?t=' + Date.now();  // Evita el cache
+    videoElement.load();  // Recarga el video
+  }
+
+
 
 
   guardar() {
@@ -73,22 +190,25 @@ export class AlertDetailsComponent implements OnInit {
       comentario: this.comentario,
       
     };
-    this.alertService.saveAlert(alertaActualizada).subscribe(() => {
-      this.router.navigate(['/alert']);
-    });
+    // this.alertService.saveAlert(alertaActualizada).subscribe(() => {
+    //   this.router.navigate(['/alert']);
+    // });
   }
 
   /////////////////////
 
-  confirmar() {
-      alert('Alerta confirmada');
-    }
+  cambiar_estado(estado: string) {
+    this.alert.status = estado
+    this.alertService.updateAlert(this.alert.id, this.alert).subscribe({
+      next: (data) => alert('Estado de alerta modificado a ' + data.status),
+      error: (e) => alert('Error: ' + e)
+    })
+  }
+
   
-    descartar() {
-      alert('Alerta descartada');
-    }
   
-    volver() {
-      window.history.back();
-    }
+  
+  volver() {
+    window.history.back();
+  }
 }

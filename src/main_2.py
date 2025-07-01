@@ -15,8 +15,10 @@ from datetime import datetime, timedelta
 
 from models import UserCreate, UserUpdate, UserResponse, UserResponse2
 from models import DeviceCreate, DeviceUpdate, DeviceResponse
-from models import AlertCreate, AlertUpdate, AlertResponse, AlertStatus, AlertPriority, AlertType
-from models import VideoCreate, VideoUpdate, VideoResponse
+from models import AlertCreate, AlertUpdate, AlertResponse
+from models import VideoCreate, VideoResponse
+from models import ReportCreate, ReportResponse
+from models import ConfigCreate, ConfigResponse
 
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -28,7 +30,6 @@ import logging
 import threading
 from pathlib import Path
 import subprocess
-import atexit
 from threading import Lock
 
 from ultralytics import YOLO
@@ -39,6 +40,12 @@ import httpx
 import time
 
 from collections import deque
+
+import io
+import pandas as pd
+
+import gridfs
+
 
 load_dotenv()  # Carga variables de entorno
 
@@ -124,6 +131,7 @@ yolo_model.fuse()  # Optimiza el modelo para inferencia (opcional pero igual le 
 # Variables globales
 camera_active = False
 video_capture = None
+porcentage_detection = 0.5
 capture_lock = Lock()
 # ---- Inicializar cámara ----
 def init_camera():
@@ -141,6 +149,17 @@ def release_camera():
             video_capture.release()
             camera_active = False
             logging.info("Cámara liberada")
+
+def load_porcentage_detection():
+    try:
+        configs = db.configs.find_one({"_id": ObjectId('685e9a03bf4ad310a1658d99')})    
+        return configs["deteccion"]
+    except Exception as e:
+        print("error al obtener configs: " + str(e))
+        return 0.5  # Return default if error
+    
+porcentage_detection = load_porcentage_detection()
+print(f"porcentage_detection = {porcentage_detection}")
 
 
 #atexit.register(release_camera)
@@ -288,10 +307,16 @@ class AlertManager:
         os.makedirs(self.video_save_path, exist_ok=True)
         self.alert_trigger_time = {}  # {camera_id: timestamp of last alert trigger}
 
+        # Conexión a MongoDB Atlas para GridFS
+        # self.mongo_client = MongoClient("tu_cadena_de_conexion_atlas")
+        # self.db = self.mongo_client["tu_base_de_datos"]
+        self.fs = gridfs.GridFS(db)
+
     def _get_video_filename(self, camera_id):
         """Generate unique filename for video based on timestamp and camera ID."""
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        return os.path.join(self.video_save_path, f"alert_{camera_id}_{timestamp}.mp4")
+        # return os.path.join(self.video_save_path, f"alert_{camera_id}_{timestamp}.mp4")
+        return f"{self.video_save_path}/alert_{camera_id}_{timestamp}.mp4"
 
     def _calculate_fps(self, camera_id):
         """Calculate actual FPS based on recent frame intervals."""
@@ -301,15 +326,49 @@ class AlertManager:
         avg_interval = (sum(intervals) / len(intervals)) * 2 #############################################
         fps = 1.0 / avg_interval if avg_interval > 0 else self.default_fps
         return min(max(fps, 1.0), self.default_fps)
+    
+    async def upload_video_to_mongodb(self, file_path, created_alert):
+        """Sube el video a MongoDB GridFS y actualiza la alerta"""
+        try:
+            with open(file_path, 'rb') as video_file:
+                video_id = self.fs.put(video_file, filename=os.path.basename(file_path))
+            # Actualizar la alerta con el ID del video en GridFS
+            async with httpx.AsyncClient() as client:
+                created_alert["video_backup"] = str(video_id)
+                response = await client.patch(
+                    f"http://127.0.0.1:8000/alerts/{created_alert["id"]}",
+                    json=created_alert
+                        # "status": created_alert["status"],
+                        # "device": {
+                        #     "id": created_alert["device"]["id"],
+                        #     "name": created_alert.device.name,
+                        #     "location": created_alert.device.location
+                        # },
+                        # "video": created_alert.video,
+                        # "video_backup": str(video_id)
+                    ,
+                    headers={"Content-Type": "application/json"},
+                    timeout=30.0  # Tiempo mayor para la subida
+                )
+                
+            if response.is_success:
+                print(f"Video subido a MongoDB y alerta actualizada: {created_alert["id"]}")
+            else:
+                print(f"Error al subido a MongoDB y actualizar alerta: {response.text}")
+                
+            return str(video_id)
+        except Exception as e:
+            print(f"Error subiendo video a MongoDB: {str(e)}")
+            return None
 
-    async def save_alert_video(self, camera_id, alert_id, frame_size):
+    async def save_alert_video(self, camera_id, video_path, frame_size, created_alert):####
         """Save video clip: 2s before and 10s after alert."""
         try:
             # Use measured FPS for video playback
             fps = self._calculate_fps(camera_id)
             print(f"[{camera_id}] Using FPS: {fps:.2f} for video")
-            fourcc = cv2.VideoWriter_fourcc(*'H264')
-            video_path = self._get_video_filename(camera_id)
+            fourcc = cv2.VideoWriter_fourcc(*'avc1')
+            #video_path = self._get_video_filename(camera_id)
             out = cv2.VideoWriter(video_path, fourcc, fps, frame_size)
 
             #datos video
@@ -328,39 +387,6 @@ class AlertManager:
                     timeout=10.0
                 )
 
-            if response.is_success:
-                # Obtener los datos JSON de la respuesta
-                created_video = response.json()
-
-                print(f"VIDEO ID: {created_video["id"]} video creado exitosamente")
-                
-                # update_data = {
-                #     "status": "pending",
-                #     "device": {
-                #         "id": "681ab9a3b83466fc52a7ed9a"
-                #     },
-                #     "video": {
-                #         "id": created_video["id"]
-                #     }
-                # }
-                # alerta_update = str(alert_id)
-
-                # try:
-                #     async with httpx.AsyncClient() as client:
-                #         response = await client.patch(
-                #             "http://127.0.0.1:8000/alerts/" + alerta_update,
-                #             json=update_data,
-                #             headers={"Content-Type": "application/json"},
-                #             timeout=10.0
-                #         )
-                # except:
-                #     print(f"Error acutalizando alerta: {alerta_update}", e)
-                # if response.is_success:
-                #     print(f"Alerta actualizada: {alerta_update} video creado exitosamente")
-                # else:
-                #     print(f"Alerta actualizada: {alerta_update} video no creado- error")
-
-
             # Wait to collect post-alert frames
             await asyncio.sleep(self.buffer_seconds - 2.0)  # Wait for 10s of post-alert frames
 
@@ -378,11 +404,16 @@ class AlertManager:
 
             out.release()
             print(f"[{camera_id}] Video saved at {video_path}")
+
+            # Subir el video a MongoDB
+            #await self.upload_video_to_mongodb(video_path, created_alert)
         except Exception as e:
             print(f"[{camera_id}] Error saving video: {str(e)}")
 
+    ####################
     async def trigger_alert(self, frame, camera_id):
         current_time = datetime.now()
+        video_path = self._get_video_filename(camera_id)
         
         # Check cooldown
         if camera_id in self.last_alert_time:
@@ -392,16 +423,21 @@ class AlertManager:
                 return False
         
         try:
+            print(f"camera_id: {camera_id}")
+            # buscar camara en bd por posición
+            new_device = db.devices.find_one({"position": camera_id})
+            
+            print(f"new_device_id: {new_device["_id"]}")
+
             # Encode evidence image
             #_, buffer = cv2.imencode('.jpg', frame)
             alert_data = {
                 "status": "pending",
                 "device": {
-                    "id": "681ab9a3b83466fc52a7ed9a"
+                    "id": str(new_device["_id"])
                 },
-                "video": {
-                    "id": "681ba110a20a2a1c5111addd"
-                }
+                "video": video_path,
+                "video_backup": "" # Se actualiza después
             }
             
             # Send alert to endpoint
@@ -414,6 +450,9 @@ class AlertManager:
                 )
             
             if response.is_success:
+                created_alert = response.json()
+                
+
                 self.last_alert_time[camera_id] = current_time
                 self.alert_trigger_time[camera_id] = current_time  # Store trigger time
                 print(f"[{camera_id}] Alerta enviada exitosamente")
@@ -423,10 +462,10 @@ class AlertManager:
                 frame_size = (frame.shape[1], frame.shape[0])  # (width, height)
 
                 # Obtener los datos JSON de la respuesta
-                created_alert = response.json()
-                alert_id = created_alert["id"]
+                # created_alert = response.json()
+                # alert_id = created_alert["id"]
 
-                asyncio.create_task(self.save_alert_video(camera_id, alert_id, frame_size))
+                asyncio.create_task(self.save_alert_video(camera_id, video_path, frame_size, created_alert))
                 return True
             else:
                 print(f"[{camera_id}] Error al enviar alerta", response.text)
@@ -442,6 +481,29 @@ class AlertManager:
             self.frame_buffers[camera_id] = deque(maxlen=int(self.default_fps * self.buffer_seconds))
         
         self.frame_buffers[camera_id].append((timestamp, frame))
+
+    def check_and_restore_video(self, video_path, alert_data):
+        """Verifica si existe el video local y si no, lo descarga de MongoDB"""
+        if os.path.exists(video_path):
+            return True
+            
+        if "video_backup" in alert_data and alert_data["video_backup"]:
+            return self.download_video_from_mongodb(alert_data["video_backup"], video_path)
+            
+        return False
+    
+    async def download_video_from_mongodb(self, video_backup_id, target_path):
+        """Descarga un video desde MongoDB GridFS"""
+        try:
+            video_data = self.fs.get(video_backup_id)
+            with open(target_path, 'wb') as video_file:
+                video_file.write(video_data.read())
+            print(f"Video descargado desde MongoDB: {target_path}")
+            return True
+        except Exception as e:
+            print(f"Error descargando video desde MongoDB: {str(e)}")
+            return False
+
 
 # Initialize alert manager
 alert_manager = AlertManager(cooldown_seconds=10, buffer_seconds=12, default_fps=30)
@@ -478,7 +540,8 @@ async def process_camera(camera_id: str):
                 conf = box.conf.item()
                 
                 # Alert condition
-                if class_name == "shoplifting" and conf > 0.55: 
+                if class_name == "shoplifting" and conf > porcentage_detection:
+                    print(f"DETECCIÓN----- confidence: {conf} --- procentage_detection: {porcentage_detection}") 
                     await alert_manager.trigger_alert(frame, camera_id)
                     break  # Only one alert per frame
 
@@ -638,10 +701,16 @@ async def root():
     <html><head><title>Servidor de Cámara</title></head>
     <body>
         <h1>Servidor funcionando ✅</h1>
-        <p><a href="/video">Ver transmisión en vivo</a></p>
         <p><a href="/docs">Ir a Docs</a></p>
     </body></html>
     """
+
+@app.get("/get_video/{video_name}")
+async def get_video(video_name: str):
+    video_path = f"assets/videos/{video_name}"
+    if not os.path.exists(video_path):
+        return {"error": "Video no encontrado"}
+    return FileResponse(video_path)
 
 # @app.get("/video")
 # async def video():
@@ -674,13 +743,13 @@ async def root():
 #    grabar_video_alerta(path, duracion)
 #    return FileResponse(str(path), media_type='video/mp4', filename=nombre)
 
-@app.post("/start_recording")
-async def start_recording():
-    nombre = f"grabacion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
-    path = VIDEOS_DIR / nombre
-    thread = threading.Thread(target=grabar_video_alerta, args=(path, 10), daemon=True)
-    thread.start()
-    return {"message": f"Grabación iniciada: {nombre}"}
+# @app.post("/start_recording")
+# async def start_recording():
+#     nombre = f"grabacion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+#     path = VIDEOS_DIR / nombre
+#     thread = threading.Thread(target=grabar_video_alerta, args=(path, 10), daemon=True)
+#     thread.start()
+#     return {"message": f"Grabación iniciada: {nombre}"}
 
   
 @app.post("/stop_recording")
@@ -876,6 +945,9 @@ async def create_device(device: DeviceCreate):
     if not device.name:
         raise HTTPException(status_code=404, detail="Name is a required field")
     
+    if(db.devices.find_one({"position": device.position})):
+        raise HTTPException(status_code=404, detail="Esa posición de cámara ya está tomada")
+    
     device_data = device.model_dump()
     device_data["createdAt"] = device_data["updatedAt"] = datetime.now()
     
@@ -891,14 +963,18 @@ async def create_device(device: DeviceCreate):
 
 # READ ALL
 @app.get("/devices/", response_model=list[DeviceResponse])
-async def get_devices(name: Optional[str] = None, location: Optional[str] = None, type: Optional[str] = None):
+async def get_devices(name: Optional[str] = None,
+    position: Optional[str] = None, location: Optional[str] = None, type: Optional[str] = None):
     query = {}
     if name:
         query["name"] = name
+    if position:
+        query["position"] = position
     if location:
         query["location"] = location
     if type:
         query["type"] = type
+    
 
     devices = []
     
@@ -906,6 +982,7 @@ async def get_devices(name: Optional[str] = None, location: Optional[str] = None
         devices.append({
             "id": str(device["_id"]),
             "name": device["name"],
+            "position": device["position"],
             "status": device["status"],
             "type": device["type"],
             "model": device["model"],
@@ -928,6 +1005,7 @@ async def get_device(device_id: str):
     return {
         "id": str(device["_id"]),
         "name": device["name"],
+        "position": device["position"],
         "status": device["status"],
         "type": device["type"],
         "model": device["model"],
@@ -942,6 +1020,12 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
     if not ObjectId.is_valid(device_id):
         raise HTTPException(status_code=400, detail="Invalid device ID format")
     
+    device_pos_exists = db.devices.find_one({"position": device_update.position})
+    if(device_pos_exists and 
+       device_pos_exists != db.devices.find_one({"_id": ObjectId(device_id)})):
+        raise HTTPException(status_code=400, detail="Esa posición de cámara ya está tomada")
+
+
     update_data = device_update.model_dump(exclude_unset=True)
     if not update_data:
         raise HTTPException(status_code=400, detail="No data provided for update")
@@ -960,6 +1044,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
     return {
         "id": str(updated_device["_id"]),
         "name": updated_device["name"],
+        "position": updated_device["position"],
         "status": updated_device["status"],
         "type": updated_device["type"],
         "model": updated_device["model"],
@@ -1023,11 +1108,11 @@ async def create_alert(alert: AlertCreate):
     # Verificar que el dispositivo existe
     if not db.devices.find_one({"_id": ObjectId(alert.device.id)}):
         raise HTTPException(status_code=400, detail="Device not found")
-    if not db.videos.find_one({"_id": ObjectId(alert.video.id)}):
-        raise HTTPException(status_code=400, detail="Video not found")
+    #if not db.videos.find_one({"_id": ObjectId(alert.video.id)}):
+    #    raise HTTPException(status_code=400, detail="Video not found")
     
     device = db.devices.find_one({"_id": ObjectId(alert.device.id)})
-    video = db.videos.find_one({"_id": ObjectId(alert.video.id)})
+    #video = db.videos.find_one({"_id": ObjectId(alert.video.id)})
 
     # Estructura de la alerta con los datos completos
     alert_data = {
@@ -1039,31 +1124,21 @@ async def create_alert(alert: AlertCreate):
             "name": device.get("name"),
             "location": device.get("location")
         },
-        "video": {
-            "id": str(video["_id"]),
-            "file_path": video.get("file_path"),
-            "starts": video.get("starts"),
-            "ends": video.get("ends")
-        },
+        "video": alert.video,
+        "video_backup": alert.video_backup,
+
+        # "video": {
+        #     "id": str(alert["video"]["id"]),
+        #     "file_path": alert["video"]["file_path"],
+        #     "starts": alert["video"]["starts"],
+        #     "ends": alert["video"]["ends"],
+        #     #"createdAt": alert["video"]["createdAt"],
+        #     #"updatedAt": alert["video"]["updatedAt"]
+        # },
+            
         "createdAt": datetime.now(),
         "updatedAt": datetime.now()
     }
-
-    
-    #alert_data = alert.model_dump()
-    #alert_data["createdAt"] = alert_data["updatedAt"] = datetime.now()
-    #alert_data["video"]["createdAt"] = alert_data["video"]["updatedAt"] = datetime.now()
-    
-    # Convertir los IDs embebidos a ObjectId
-    #try:
-    #alert_data["device"]["_id"] = ObjectId(alert_data["device"]["_id"])
-    #alert_data["video"]["_id"] = ObjectId()
-    #except Exception as e:
-    #    raise HTTPException(status_code=400, detail=e)
-    #alert_data["device"]["_id"] = alert_data["device"]["id"]
-    #alert_data["video"]["_id"] = ObjectId()
-    
-    
     
     # Insertar en la base de datos
     result = db.alerts.insert_one(alert_data)
@@ -1081,13 +1156,14 @@ async def create_alert(alert: AlertCreate):
             "name": created_alert["device"]["name"],
             "location": created_alert["device"]["location"]
         },
-        #"video": created_alert["video"],
-        "video": {
-            "id": created_alert["video"]["id"],
-            "file_path": created_alert["video"]["file_path"],
-            "starts": created_alert["video"]["starts"],
-            "ends": created_alert["video"]["ends"]
-        },
+        "video": created_alert["video"],
+        "video_backup": created_alert["video_backup"],
+        # "video": {
+        #     "id": created_alert["video"]["id"],
+        #     "file_path": created_alert["video"]["file_path"],
+        #     "starts": created_alert["video"]["starts"],
+        #     "ends": created_alert["video"]["ends"]
+        # },
         "createdAt": created_alert["createdAt"],
         "updatedAt": created_alert["updatedAt"]
     }
@@ -1141,14 +1217,16 @@ async def get_alerts(
                 "name": alert["device"]["name"],
                 "location": alert["device"].get("location")
             },
-            "video": {
-                "id": str(alert["video"]["id"]),
-                "file_path": alert["video"]["file_path"],
-                "starts": alert["video"]["starts"],
-                "ends": alert["video"]["ends"],
-                #"createdAt": alert["video"]["createdAt"],
-                #"updatedAt": alert["video"]["updatedAt"]
-            },
+            "video": alert["video"],
+            "video_backup": alert["video_backup"],
+            # "video": {
+            #     "id": str(alert["video"]["id"]),
+            #     "file_path": alert["video"]["file_path"],
+            #     "starts": alert["video"]["starts"],
+            #     "ends": alert["video"]["ends"],
+            #     #"createdAt": alert["video"]["createdAt"],
+            #     #"updatedAt": alert["video"]["updatedAt"]
+            # },
             "createdAt": alert["createdAt"],
             "updatedAt": alert["updatedAt"]
         })
@@ -1174,14 +1252,17 @@ async def get_alert(alert_id: str):
             "name": alert["device"]["name"],
             "location": alert["device"].get("location")
         },
-        "video": {
-            "id": str(alert["video"]["id"]),
-            "file_path": alert["video"]["file_path"],
-            "starts": alert["video"]["starts"],#.strftime("%H:%M:%S"),
-            "ends": alert["video"]["ends"]#.strftime("%H:%M:%S"),
-            #"createdAt": alert["video"]["createdAt"],
-            #"updatedAt": alert["video"]["updatedAt"]
-        },
+        "video": alert["video"],
+        "video_backup": alert["video_backup"],
+        # "video": {
+        #     "id": str(alert["video"]["id"]),
+        #     "file_path": alert["video"]["file_path"],
+        #     "starts": alert["video"]["starts"],
+        #     "ends": alert["video"]["ends"],
+        #     #"createdAt": alert["video"]["createdAt"],
+        #     #"updatedAt": alert["video"]["updatedAt"]
+        # },
+
         "createdAt": alert["createdAt"],
         "updatedAt": alert["updatedAt"]
     }
@@ -1194,31 +1275,32 @@ async def update_alert(alert_id: str, alert_update: AlertUpdate):
     
     if not db.devices.find_one({"_id": ObjectId(alert_update.device.id)}):
         raise HTTPException(status_code=400, detail="Device not found")
-    if not db.videos.find_one({"_id": ObjectId(alert_update.video.id)}):
-        raise HTTPException(status_code=400, detail="Video not found")
+    # if not db.videos.find_one({"_id": ObjectId(alert_update.video.id)}):
+    #     raise HTTPException(status_code=400, detail="Video not found")
     
-    device = db.device.find_one({"_id": ObjectId(alert_update.device.id)})
-    video = db.video.find_one({"_id": ObjectId(alert_update.video.id)})
+    # device = db.device.find_one({"_id": ObjectId(alert_update.device.id)})
+    # video = db.video.find_one({"_id": ObjectId(alert_update.video.id)})
     
-    #update_data = alert_update.model_dump(exclude_unset=True)
-    update_data = {
-        "status": alert_update.status,
-        #"alert_type": alert.alert_type,
-        #"priority": alert.priority,
-        "device": {
-            "id": str(device["_id"]),
-            "name": device.name,
-            "location": device.location
-        },
-        "video": {
-            "_id": str(video["_id"]),
-            "file_path": video.get("file_path"),
-            "starts": video.get("starts"),
-            "ends": video.get("ends")
-        },
-    }
-    # if not update_data:
-    #     raise HTTPException(status_code=400, detail="No data provided for update")
+    update_data = alert_update.model_dump(exclude_unset=True)
+    # update_data = {
+    #     "status": alert_update.status,
+    #     #"alert_type": alert.alert_type,
+    #     #"priority": alert.priority,
+    #     "device": {
+    #         "id": str(device["_id"]),
+    #         "name": device.name,
+    #         "location": device.location
+    #     },
+    #     "video": alert_update.video
+    #     # "video": {
+    #     #     "_id": str(video["_id"]),
+    #     #     "file_path": video.get("file_path"),
+    #     #     "starts": video.get("starts"),
+    #     #     "ends": video.get("ends")
+    #     # },
+    # }
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data provided for update")
     
     
     
@@ -1243,14 +1325,16 @@ async def update_alert(alert_id: str, alert_update: AlertUpdate):
             "name": updated_alert["device"]["name"],
             "location": updated_alert["device"].get("location")
         },
-        "video": {
-            "id": str(updated_alert["video"]["id"]),
-            "file_path": updated_alert["video"]["file_path"],
-            "starts": updated_alert["video"]["starts"],
-            "ends": updated_alert["video"]["ends"],
-            #"createdAt": updated_alert["video"]["createdAt"],
-            #"updatedAt": updated_alert["video"]["updatedAt"]
-        },
+        "video": updated_alert["video"],
+        "video_backup": updated_alert["video_backup"],
+        # "video": {
+        #     "id": str(updated_alert["video"]["id"]),
+        #     "file_path": updated_alert["video"]["file_path"],
+        #     "starts": updated_alert["video"]["starts"],
+        #     "ends": updated_alert["video"]["ends"],
+        #     #"createdAt": updated_alert["video"]["createdAt"],
+        #     #"updatedAt": updated_alert["video"]["updatedAt"]
+        # },
         "createdAt": updated_alert["createdAt"],
         "updatedAt": updated_alert["updatedAt"]
     }
@@ -1268,7 +1352,167 @@ async def delete_alert(alert_id: str):
 
 
 
-############ aLERTA REPORTES ######################################
+############ REPORTES ######################################
+# CREATE REPORT
+@app.post("/reports/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
+async def create_report(report: ReportCreate):
+    try:
+        # Validar que los alert_ids existen (opcional)
+        # for alert_id in report.alert_ids:
+        #     if not db.alerts.find_one({"_id": ObjectId(alert_id)}):
+        #         raise HTTPException(status_code=404, detail=f"Alert ID {alert_id} not found")
+        
+        now = datetime.now()
+        report_data = {
+            "alert_ids": report.alert_ids,
+            "filters": report.filters,
+            "user_name": report.user_name,
+            "createdAt": now,
+            "updatedAt": now
+        }
+        
+        result = db.reports.insert_one(report_data)
+        created_report = db.reports.find_one({"_id": result.inserted_id})
+        
+        return {
+            "id": str(created_report["_id"]),
+            "alert_ids": created_report["alert_ids"],
+            "filters": created_report["filters"],
+            "user_name": created_report["user_name"],
+            "createdAt": created_report["createdAt"],
+            "updatedAt": created_report["updatedAt"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# GET ALL REPORTS
+@app.get("/reports/", response_model=list[ReportResponse])
+async def get_reports(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100)
+):
+    try:
+        reports = []
+        for report in db.reports.find().skip(skip).limit(limit).sort("createdAt", -1):
+            reports.append({
+                "id": str(report["_id"]),
+                "alert_ids": report["alert_ids"],
+                "filters": report["filters"],
+                "user_name": report["user_name"],
+                "createdAt": report["createdAt"],
+                "updatedAt": report["updatedAt"]
+            })
+        return reports
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# GET SINGLE REPORT
+@app.get("/reports/{report_id}", response_model=ReportResponse)
+async def get_report(report_id: str):
+    try:
+        report = db.reports.find_one({"_id": ObjectId(report_id)})
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+        
+        return {
+            "id": str(report["_id"]),
+            "alert_ids": report["alert_ids"],
+            "filters": report["filters"],
+            "user_name": report["user_name"],
+            "createdAt": report["createdAt"],
+            "updatedAt": report["updatedAt"]
+        }
+    except:
+        raise HTTPException(status_code=400, detail="Invalid report ID format")
+
+# DELETE REPORT
+@app.delete("/reports/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_report(report_id: str):
+    try:
+        result = db.reports.delete_one({"_id": ObjectId(report_id)})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Report not found")
+        return None
+    except:
+        raise HTTPException(status_code=400, detail="Invalid report ID format")
+
+from typing import List
+# Exportar a Excel
+@app.get("/reports/export_report/")
+async def export_alerts_to_excel(
+    status: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    device_name: Optional[str] = None,
+    alert_ids: Optional[List[str]] = Query(None),  # Cambiado a lista de strings
+):
+    try:
+        query = {}
+        
+        # Filtro por status
+        if status:
+            query["status"] = status
+        
+        # Filtro por rango de fechas
+        if start_date or end_date:
+            date_filter = {}
+            if start_date:
+                date_filter["$gte"] = start_date
+            if end_date:
+                date_filter["$lte"] = end_date
+            query["createdAt"] = date_filter
+        # Filtro por lista de IDs de alerta
+        if alert_ids:
+            try:
+                # Convertir cada string ID a ObjectId
+                object_ids = [ObjectId(alert_id) for alert_id in alert_ids]
+                query["_id"] = {"$in": object_ids}  # Usar operador $in para buscar en la lista
+            except:
+                raise HTTPException(status_code=400, detail="Invalid alert ID format")
+
+        alerts = []
+        for alert in db.alerts.find(query).sort("createdAt", -1):
+            alerts.append({
+                "id": str(alert["_id"]),
+                "status": alert["status"],
+                "device_id": str(alert["device"]["id"]),
+                "device_name": alert["device"]["name"],
+                "device_location": alert["device"].get("location"),
+                "video_url": alert["video"],
+                "created_at": alert["createdAt"],
+                "updated_at": alert["updatedAt"]
+            })
+
+        if not alerts:
+            raise HTTPException(status_code=404, detail="No alerts found with the specified filters")
+
+        # Convertir a DataFrame
+        df = pd.DataFrame(alerts)
+        
+        # Crear archivo Excel en memoria
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Reporte de Alertas')
+        
+        output.seek(0)
+        
+        headers = {
+            'Content-Disposition': 'attachment; filename="reporte_alertas.xlsx"',
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+        
+        return StreamingResponse(output, headers=headers)
+
+    except ImportError as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Required Excel export libraries are not installed. Please install openpyxl or xlsxwriter."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating Excel report: {str(e)}"
+        )
 
 #@app.post("/save-alert")
 #async def save_alert(alert: AlertCreate):
@@ -1359,3 +1603,116 @@ async def read_users_me(token: str = Depends(oauth2_scheme)):
 
     }
 
+###############################  CONFIG  ############################################
+#####CREATE ###############
+@app.post("/configs/", response_model=ConfigResponse, status_code=201)
+async def create_config(config: ConfigCreate):
+    config_data = config.model_dump()
+    config_data["createdAt"] = config_data["updatedAt"] = datetime.now()
+    
+    result = db.configs.insert_one(config_data)
+    created_config = db.configs.find_one({"_id": result.inserted_id})
+    return {
+        "id": str(created_config["_id"]),
+        **config.model_dump(),
+        "createdAt": created_config["createdAt"],
+        "updatedAt": created_config["updatedAt"]
+    }
+
+# READ ALL
+@app.get("/configs/", response_model=list[ConfigResponse])
+async def get_configs():
+    configs = []
+    for config in db.configs.find().sort("createdAt", -1): #falgta agregar el query#3333333
+        configs.append({
+            "id": str(config["_id"]),
+            "user_id": config["user_id"],
+            "auto": config["auto"],
+            "sonido": config["sonido"],
+            "notif": config["notif"],
+            "volumen": config["volumen"],
+            "deteccion": config["deteccion"],
+            "createdAt": config["createdAt"],
+            "updatedAt": config["updatedAt"]
+        })
+    return configs
+
+
+@app.patch("/configs/{config_id}", response_model=ConfigResponse)
+async def update_config(config_id: str, config_update: ConfigCreate):
+    if not ObjectId.is_valid(config_id):
+        raise HTTPException(status_code=400, detail="Invalid device ID format")
+    update_data = config_update.model_dump(exclude_unset=True)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data provided for update")
+    
+    update_data["updatedAt"] = datetime.now()
+    
+    result = db.configs.update_one(
+        {"_id": ObjectId(config_id)},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Device not found or no changes made")
+    
+    updated_config = db.configs.find_one({"_id": ObjectId(config_id)})
+    porcentage_detection = update_data["deteccion"]
+    print(f"percentage######{porcentage_detection}")
+    return {
+        "id": str(updated_config["_id"]),
+        "user_id": updated_config["user_id"],
+        "auto": updated_config["auto"],
+        "sonido": updated_config["sonido"],
+        "notif": updated_config["notif"],
+        "volumen": updated_config["volumen"],
+        "deteccion": updated_config["deteccion"],
+        "createdAt": updated_config["createdAt"],
+        "updatedAt": updated_config["updatedAt"]
+    }
+
+# # Endpoint para verificar existencia local (opcional)
+# @app.head("/videos/{video_name}")
+# async def check_video_exists(video_name: str):
+#     video_path = f"C:/Users/KARIM/Desktop/angular_ultimo/angular_ult/src/assets/videos/{video_name}"
+#     if os.path.exists(video_path):
+#         return Response(status_code=200)
+#     return Response(status_code=404)
+
+# Endpoint para verificar si un video existe en tu API
+@app.get("/video_exists/{video_name}")
+async def video_exists(video_name: str):
+    video_path = os.path.join("C:/Users/KARIM/Desktop/angular_ultimo/angular_ult/src/assets/videos/", video_name)
+    return {"exists": os.path.exists(video_path)}  # Devuelve un objeto JSON
+
+
+
+# Endpoint para descargar desde GridFS
+@app.get("/alerts/{alert_id}/download_video")
+async def download_video(alert_id: str):
+    # 1. Obtener la alerta para conseguir el video_backup_id
+    alert = db.alerts.find_one({"_id": ObjectId(alert_id)})
+    if not alert or "video_backup" not in alert:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    # 2. Obtener el video de GridFS
+    fs = gridfs.GridFS(db)
+    video_file = fs.get(ObjectId(alert["video_backup"]))
+    
+    # 3. Streamear el video
+    return StreamingResponse(
+        video_file,
+        media_type="video/mp4",
+        headers={
+            "Content-Disposition": f"attachment; filename={video_file.filename}"
+        }
+    )
+
+@app.post("/set-detection")
+def set_detection(detection: float):
+    porcentage_detection=detection
+    return porcentage_detection
+
+@app.get("/get-detection")
+def get_detecetion():
+    return porcentage_detection

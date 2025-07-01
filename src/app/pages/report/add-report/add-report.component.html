@@ -1,0 +1,66 @@
+<div class="alert-container">
+  <h2 class="titulo-alertas"> Alertas</h2>
+  <!-- Filtros -->
+  <button mat-raised-button color="primary" type="submit" (click)="get_back()">
+      Atrás
+  </button>
+  <div class="filter-container">
+    <form [formGroup]="filterForm" (ngSubmit)="onFilter()">
+      <!-- Filtro por estado -->
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let status of statusOptions" [value]="status.value">
+            {{ status.viewValue }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Filtro por rango de fechas -->
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Inicio</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate" 
+              (dateChange)="onStartDateChange($event)">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Fin</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate"
+              (dateChange)="onEndDateChange($event)">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+
+      <!-- Filtro por ID de alerta 
+      <mat-form-field appearance="outline">
+        <mat-label>Alerta ID</mat-label>
+        <input matInput formControlName="alertId" placeholder="Enter alert ID">
+      </mat-form-field>-->
+
+      <!-- Filtro por nombre de dispositivo -->
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre Cámara</mat-label>
+        <mat-select formControlName="deviceName">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let name of deviceNames" [value]="name">
+            {{ name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="button-group">
+        <button mat-raised-button color="primary" type="submit" [disabled]="isLoading">
+          <mat-icon>search</mat-icon> Filtrar
+        </button>
+        <button mat-button type="button" (click)="generateReport()" [disabled]="isLoading">
+          Generar Reporte
+        </button>
+      </div>
+    </form>
+  </div>
+  <h3>se encontraron {{this.alerts.length}} alerta(s).</h3>
+</div>
+

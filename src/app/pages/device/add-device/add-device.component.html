@@ -31,6 +31,13 @@
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="form-field">
+        <mat-label>Posición Cam.</mat-label>
+        <mat-select [(ngModel)]="nuevoDispositivo.position" name="position">
+          <mat-option *ngFor="let u of pos" [value]="u">{{ u }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="form-field">
         <mat-label>Ubicación</mat-label>
         <mat-select [(ngModel)]="nuevoDispositivo.location" name="ubicacion">
           <mat-option *ngFor="let u of ubicaciones" [value]="u">{{ u }}</mat-option>

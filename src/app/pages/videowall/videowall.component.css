@@ -66,4 +66,25 @@ mat-sidenav-content {
   justify-content: center;
 }
 
+a {
+  color: red !important; /* Rojo llamativo */
+  text-decoration: none; /* Opcional: quitar subrayado */
+}
+
+/* Estilo después de hacer clic (visited) */
+a:visited {
+  color: black !important; /* Negro */
+}
+
+/* Opcional: Estilo al pasar el mouse (hover) */
+a:hover {
+  opacity: 0.8;
+}
+
+/* Opcional: Estilo al hacer clic (active) */
+a:active {
+  color: darkgray !important;
+}
+
+
 

@@ -7,32 +7,61 @@
       Generar Reporte
     </button>
 
-    <mat-form-field appearance="fill">
+    <!-- <mat-form-field appearance="fill">
       <mat-label>Reporte Automático</mat-label>
       <mat-select [(ngModel)]="reporteAutomatico">
         <mat-option [value]="true">Sí</mat-option>
         <mat-option [value]="false">No</mat-option>
       </mat-select>
-    </mat-form-field>
+    </mat-form-field> -->
 
-    <button mat-stroked-button color="accent" (click)="exportarExcel()">
+    <!-- <button mat-stroked-button color="accent" (click)="exportarExcel()">
       <mat-icon>download</mat-icon>
       Exportar a Excel
-    </button>
+    </button> -->
   </div>
 </div>
 
-<table mat-table [dataSource]="reportes" class="mat-elevation-z2 full-width-table">
+<table mat-table [dataSource]="dataSource" class="mat-elevation-z2 full-width-table">
   <ng-container matColumnDef="id">
     <th mat-header-cell *matHeaderCellDef>ID</th>
     <td mat-cell *matCellDef="let reporte">{{ reporte.id }}</td>
   </ng-container>
 
-  <ng-container matColumnDef="comentario">
-    <th mat-header-cell *matHeaderCellDef>Comentario</th>
-    <td mat-cell *matCellDef="let reporte">{{ reporte.comentario }}</td>
+  <ng-container matColumnDef="length">
+    <th mat-header-cell *matHeaderCellDef>Cantidad alertas</th>
+    <td mat-cell style="max-width: 100px;" *matCellDef="let reporte">{{ reporte.alert_ids.length }}</td>
   </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="['id', 'comentario']"></tr>
-  <tr mat-row *matRowDef="let row; columns: ['id', 'comentario'];"></tr>
+  <ng-container matColumnDef="filters">
+    <th mat-header-cell *matHeaderCellDef>Filtros utilizados</th>
+    <td mat-cell *matCellDef="let reporte">{{ reporte.filters }}</td>
+  </ng-container>
+  
+  <ng-container matColumnDef="user">
+    <th mat-header-cell *matHeaderCellDef>Creado Por</th>
+    <td mat-cell *matCellDef="let reporte">{{ reporte.user_name }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="createdAt">
+    <th mat-header-cell *matHeaderCellDef>Fecha de creación</th>
+    <td mat-cell *matCellDef="let reporte">{{ reporte.createdAt | date:'medium' }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td mat-cell *matCellDef="let reporte">
+        <!-- <button mat-button color="primary" >
+          Ver Detalles
+        </button> -->
+        <button mat-stroked-button color="accent" (click)="exportToExcel(reporte.alert_ids)">
+          <mat-icon>download</mat-icon>
+          Descargar
+        </button>
+      </td>
+    </ng-container>
+  
+
+  <tr mat-header-row *matHeaderRowDef="['createdAt', 'length', 'filters', 'id', 'actions']"></tr>
+  <tr mat-row *matRowDef="let row; columns: ['createdAt', 'length', 'filters', 'id', 'actions'];"></tr>
 </table>

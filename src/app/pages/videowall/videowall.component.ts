@@ -10,11 +10,15 @@ import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Subject, Subscription, takeUntil, timer } from 'rxjs';
+import { config, Subject, Subscription, takeUntil, timer } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AlertService } from '../../services/alert.service';
 import { AlertCreate, AlertResponse } from '../../models/AlertModel';
 import { WebSocketService } from '../../services/web-socket.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { DeviceService } from '../../services/devices.service';
+import { ConfigsService } from '../../services/configs.service';
+
 
 @Component({
   selector: 'app-videowall',
@@ -29,7 +33,8 @@ import { WebSocketService } from '../../services/web-socket.service';
     MatCardModule,
     MatListModule,
     MatSidenavModule,
-    RouterLink
+    RouterLink,
+    MatSnackBarModule
   ]
 })
 export class VideowallComponent implements OnInit, OnDestroy {
@@ -37,30 +42,40 @@ export class VideowallComponent implements OnInit, OnDestroy {
   url = 'http://127.0.0.1:8000';
 
   private destroy$ = new Subject<void>();
+  private alertsSubscription!: Subscription; // <- Añade esta propiedad
   safeVideoUrl!: SafeUrl | undefined;
   isStreamActive = false;
-
-  private streamUrl = 'http://127.0.0.1:8000/video';
-  private cacheBuster = 0;
+  config_data = {
+    volume: 0.5,
+    notif: true,
+    audio_path: ""
+  }
+  valor1 = 0.1
+  // private streamUrl = 'http://127.0.0.1:8000/video';
+  // private cacheBuster = 0;
   
   //nuevo
   @Input() cameraId!: string;
   imageSrc: string = '';
   errorMessage: string = '';
-  private subscription!: Subscription;
+  // private subscription!: Subscription;
   // Configuración de cámaras
+  nombre = "camera1"
   cameras = [
     { id: 'camera1', name: 'Cámara 1', imageSrc: '', error: '', loading: true, ws: null as WebSocket | null },
     { id: 'camera2', name: 'Cámara 2', imageSrc: '', error: '', loading: true, ws: null as WebSocket | null }
   ];
   alerts!: AlertResponse[];
-
+  
   constructor(
-    private router: Router, 
-    private http: HttpClient, 
-    private sanitizer: DomSanitizer,
+    // private router: Router, 
+    // private http: HttpClient, 
+    // private sanitizer: DomSanitizer,
     private alertService: AlertService,
-    private webSocketService: WebSocketService
+    private deviceService: DeviceService,
+    private configsService: ConfigsService,
+    private snackBar: MatSnackBar
+    // private webSocketService: WebSocketService
   ) {
     /*console.log("contructor ejecutado");
     this.http.post(`${this.url}/camera/status`, {}).subscribe({
@@ -75,14 +90,39 @@ export class VideowallComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     //this.initializeCamera();
+
+    this.configsService.getConfigs().subscribe({
+      next: (configs) => {
+        this.config_data.volume = configs[0].volumen;
+        this.config_data.notif = configs[0].notif;
+        this.config_data.audio_path = configs[0].sonido;
+        this.valor1 = configs[0].deteccion;
+      }
+    });
+
     this.connectToAllCameras();
     this.loadAlerts();
+    this.setupAlertNotifications();
+    this.loadDeviceNames();
   }
 
  ////empieza nuevo
  connectToAllCameras(): void {
     this.cameras.forEach(camera => {
       this.connectToCamera(camera);
+    });
+  }
+
+  loadDeviceNames() {
+    this.deviceService.getDevices().subscribe({
+      next: (devices) => {
+        let index = 0;
+        devices.forEach(device => {
+          this.cameras[index].name = device.name;
+          index++;
+        });
+      },
+      error: (e) => alert("Error loading device names: " + e)
     });
   }
 
@@ -145,6 +185,11 @@ export class VideowallComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Limpiar la suscripción al destruir el componente
+    if (this.alertsSubscription) {
+      this.alertsSubscription.unsubscribe();
+    }
+
   }
 
   loadAlerts() {
@@ -154,18 +199,59 @@ export class VideowallComponent implements OnInit, OnDestroy {
     });
   }
 
-  generateAlert() {
-    const new_alert: AlertCreate = {
-        "status": "confirmed",
-        "device": {
-          "id": "681ab9a3b83466fc52a7ed9a",
-        },
-        "video": {
-          "id": "681ba110a20a2a1c5111addd",
+  // Método para configurar la escucha de nuevas alertas
+  setupAlertNotifications(): void {
+    // Guarda la suscripción
+    this.alertsSubscription = this.alertService.getAlertsStream().subscribe({
+      next: (newAlert) => {
+        if (newAlert) {
+          if(this.config_data.notif) {
+            this.playNotificationSound();
+            this.showAlertNotification(newAlert);
+          }
+          // Actualizar la lista de alertas
+          this.loadAlerts();
         }
-      }
-    this.alertService.createAlert(new_alert).subscribe();
+      },
+      error: (err) => console.error('Error en el stream de alertas:', err)
+    });
   }
+
+
+
+  // Mostrar notificación visual
+  showAlertNotification(alert: AlertResponse): void {
+    this.snackBar.open(
+      `⚠️ Nueva alerta: ${alert.status.toUpperCase()} - ${alert.device.location}`,
+      'Cerrar',
+      {
+        duration: 5000,
+        panelClass: ['alert-notification']
+      }
+    );
+
+    
+  }
+
+  // Reproducir sonido de alerta
+  playNotificationSound(): void {
+    const audio = new Audio(this.config_data.audio_path);
+    audio.volume = this.config_data.volume;
+    audio.play().catch(e => console.error('Error al reproducir el sonido:', e));
+  }
+
+  // generateAlert() {
+  //   const new_alert: AlertCreate = {
+  //       "status": "confirmed",
+  //       "device": {
+  //         "id": "681ab9a3b83466fc52a7ed9a",
+  //       },
+  //       "video": {
+  //         "id": "681ba110a20a2a1c5111addd",
+  //       }
+  //     }
+  //   this.alertService.createAlert(new_alert).subscribe();
+  // }
 
 
   // private initializeCamera() {
@@ -197,14 +283,14 @@ export class VideowallComponent implements OnInit, OnDestroy {
   // }
 
 
-  checkCameraStatus() {
-    this.http.get('http://127.0.0.1:8000/camera/status')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (status) => this.isStreamActive = true,
-        error: () => this.isStreamActive = false
-      });
-  }
+  // checkCameraStatus() {
+  //   this.http.get('http://127.0.0.1:8000/camera/status')
+  //     .pipe(takeUntil(this.destroy$))
+  //     .subscribe({
+  //       next: (status) => this.isStreamActive = true,
+  //       error: () => this.isStreamActive = false
+  //     });
+  // }
 
   /*retryStream(attempts = 3, delay = 2000) {
     let attemptsLeft = attempts;
@@ -237,43 +323,43 @@ export class VideowallComponent implements OnInit, OnDestroy {
 
 
   //////////////// GRABAR /////////////////////////////////////////////////////////////////////////////
-  startRecording(): void {
-    this.http.post(`${this.url}/start_recording`, {}).subscribe({
-      next: () => this.handleRecordingResponse(true, 'Grabación iniciada desde el backend'),
-      error: (err: HttpErrorResponse) => this.handleError(err, 'Error al iniciar grabación')
-    });
-  }
+  // startRecording(): void {
+  //   this.http.post(`${this.url}/start_recording`, {}).subscribe({
+  //     next: () => this.handleRecordingResponse(true, 'Grabación iniciada desde el backend'),
+  //     error: (err: HttpErrorResponse) => this.handleError(err, 'Error al iniciar grabación')
+  //   });
+  // }
 
-  stopRecording(): void {
-    this.http.post(`${this.url}/stop_recording`, {}, { responseType: 'blob' }).subscribe({
-      next: (blob) => {
-        this.downloadBlob(blob, 'grabacion.mp4');
-        this.handleRecordingResponse(false, 'Grabación detenida y descargada');
-      },
-      error: (err: HttpErrorResponse) => this.handleError(err, 'Error al detener grabación')
-    });
-  }
+  // stopRecording(): void {
+  //   this.http.post(`${this.url}/stop_recording`, {}, { responseType: 'blob' }).subscribe({
+  //     next: (blob) => {
+  //       this.downloadBlob(blob, 'grabacion.mp4');
+  //       this.handleRecordingResponse(false, 'Grabación detenida y descargada');
+  //     },
+  //     error: (err: HttpErrorResponse) => this.handleError(err, 'Error al detener grabación')
+  //   });
+  // }
 
-  goHome(): void {
-    this.router.navigate(['/c/home']);
-  }
+  // goHome(): void {
+  //   this.router.navigate(['/c/home']);
+  // }
 
-  private handleRecordingResponse(isRecording: boolean, message: string): void {
-    this.isRecording = isRecording;
-    console.log(message);
-  }
+  // private handleRecordingResponse(isRecording: boolean, message: string): void {
+  //   this.isRecording = isRecording;
+  //   console.log(message);
+  // }
 
-  private handleError(error: HttpErrorResponse, context: string): void {
-    this.isRecording = false;
-    console.error(`${context}:`, error.message || error);
-  }
+  // private handleError(error: HttpErrorResponse, context: string): void {
+  //   this.isRecording = false;
+  //   console.error(`${context}:`, error.message || error);
+  // }
 
-  private downloadBlob(blob: Blob, filename: string): void {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }
+  // private downloadBlob(blob: Blob, filename: string): void {
+  //   const url = window.URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = filename;
+  //   a.click();
+  //   window.URL.revokeObjectURL(url);
+  // }
 }

@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { UserService } from './../../services/user.service';
+import { ConfigsService } from './../../services/configs.service';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../auth.service';
 import { MatDividerModule } from '@angular/material/divider';
@@ -20,9 +22,19 @@ import { MatSidenavModule } from '@angular/material/sidenav';
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
 
-  constructor(private router: Router, private authService: AuthService) {}
+  nombre = "";
+  constructor(private router: Router, private authService: AuthService, private configsService: ConfigsService, private userService: UserService) {
+  }
+  
+  ngOnInit(): void {
+    this.configsService.getConfigs().subscribe({
+      next: (data) => this.userService.getOneUserId(data[0].user_id).subscribe({
+        next: (user) => this.nombre = user.name
+      })
+    })
+  }
 
   /*logout2() {
     localStorage.removeItem('token');

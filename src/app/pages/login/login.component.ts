@@ -1,3 +1,4 @@
+import { ConfigCreate } from './../../models/ConfigModel';
 import { UserService } from './../../services/user.service';
 import { Component} from '@angular/core';
 import { CommonModule } from '@angular/common'; // Importa CommonModule para directivas básicas como *ngIf, *ngFor
@@ -9,6 +10,7 @@ import { RouterModule} from '@angular/router';
 import { AuthService } from '../../auth.service';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
+import { ConfigsService } from '../../services/configs.service';
 
 @Component({
   selector: 'app-login', 
@@ -62,7 +64,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private userService: UserService
+    private userService: UserService,
+    private configsService: ConfigsService
   ) {
     if (this.authService.isAuthenticated())
       this.router.navigate(["/c/home"])
@@ -78,7 +81,23 @@ export class LoginComponent {
       const { email, password } = this.loginForm.value;
       this.authService.login(email, password).subscribe({
         next: () => {
-          this.router.navigate(['/c/home']);
+          // this.userService.getOneUserEmail(email).subscribe({
+          //   next: (user) => {
+          //     var new_config: ConfigCreate = {
+          //     "user_id": user.id,
+          //     "auto": true,
+          //     "sonido": "/assets/sounds/alert_sound.mp3",
+          //     "notif": true
+          //     }
+          //     this.configsService.updateConfig("685e9a03bf4ad310a1658d99", new_config).subscribe({
+          //       next: () =>
+          //         this.router.navigate(['/c/home']),
+          //       error: (e) => alert("error updating config: " + e)
+          //     })
+          //   },
+          //   error: (e) => alert("error getting user: " + e)
+          // })
+          this.router.navigate(['/c/home'])
         },
         error: (e) => {
           console.log("Error:", e);

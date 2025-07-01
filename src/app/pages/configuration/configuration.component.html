@@ -1,7 +1,7 @@
 <div class="config-container mat-elevation-z6">
   <h2>⚙️ Configuración del Software</h2>
 
-  <div class="form-group">
+  <!-- <div class="form-group">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Idioma</mat-label>
       <mat-select [(ngModel)]="idioma">
@@ -17,20 +17,53 @@
         <mat-option *ngFor="let zona of zonasHorarias" [value]="zona">{{ zona }}</mat-option>
       </mat-select>
     </mat-form-field>
+  </div>  -->
+  
+
+  <!-- <mat-form-field>
+    <mat-label>Audio</mat-label>
+    <mat-select [(ngModel)]="sonidoRuta">
+      @for (a of audio_rutas; track a) {
+        <mat-option [value]="a.valor">{{a.valorVisto}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field> -->
+
+  <mat-form-field appearance="fill" class="form-field">
+    <mat-label>Ubicación</mat-label>
+    <mat-select [(ngModel)]="sonidoRuta">
+      <mat-option [value]="audio_rutas[0]">Audio 1</mat-option>
+      <mat-option [value]="audio_rutas[1]">Audio 2</mat-option>
+      <mat-option [value]="audio_rutas[2]">Audio 3</mat-option>
+      <mat-option [value]="audio_rutas[3]">Audio 4</mat-option>
+      <mat-option [value]="audio_rutas[4]">Audio 5</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div class="form-group">
+    <div appearance="outline" class="full-width">
+      <mat-label>Volumen: {{volume}}</mat-label>
+      <!-- <input type="range" min="0" max="1" step="0.1" 
+          [(ngModel)]="volume" (input)="updateVolume(); playSound();">
+      <button mat-button (click)="playSound()">Play Sound</button> -->
+      <mat-slider min="0" max="1" step="0.1" style="width:95%;">
+        <input matSliderThumb [(ngModel)]="volume" (input)="updateVolume(); playSound();" value={{volume}}>
+      </mat-slider>
+    </div>
   </div>
 
   <div class="form-group">
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Nivel de Seguridad</mat-label>
-      <mat-select [(ngModel)]="nivelSeguridad">
-        <mat-option *ngFor="let nivel of nivelesSeguridad" [value]="nivel">{{ nivel }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <div appearance="outline" class="full-width">
+      <mat-label>Nivel de Detección: {{deteccion}}</mat-label>
+      <mat-slider min="0" max="1" step="0.05" style="width:95%;">
+        <input matSliderThumb [(ngModel)]="deteccion" value={{deteccion}}>
+      </mat-slider>
+    </div>
   </div>
 
   <div class="checkbox-group">
     <mat-checkbox [(ngModel)]="permitirNotificaciones">Permitir notificaciones</mat-checkbox>
-    <mat-checkbox [(ngModel)]="modoOscuro">Activar modo oscuro</mat-checkbox>
+    <mat-checkbox [(ngModel)]="auto">Reportes semanales automáticos</mat-checkbox>
   </div>
 
   <div class="btn-guardar">

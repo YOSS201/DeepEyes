@@ -34,17 +34,10 @@ export class AddDeviceComponent implements OnInit{
   isEditMode: boolean = false;
   deviceId: string | null = null;
 
-  nuevoDispositivo2 = {
-    nombre: '',
-    modelo: '',
-    estado: 'Activo',
-    ubicacion: '',
-    fechaInstalacion: ''
-  };
-
   nuevoDispositivo: DeviceCreate = {
     name: '',
     status: true,
+    position: '',
     type: '',
     model: '',
     location: '',
@@ -67,6 +60,7 @@ export class AddDeviceComponent implements OnInit{
           this.nuevoDispositivo = {
             name: device.name,
             status: device.status,
+            position: device.position,
             type: device.type,
             model: device.model,
             location: device.location
@@ -89,6 +83,7 @@ export class AddDeviceComponent implements OnInit{
   }
   
   ubicaciones = ['Entrada', 'Pasillo', 'Caja', 'Oficina'];
+  pos = ['camera1', 'camera2', 'camera3', 'camera4', 'camera5', 'camera6']
   
   /*guardarDispositivo() {
     this.deviceService.createDevice(this.nuevoDispositivo).subscribe({
@@ -104,6 +99,20 @@ export class AddDeviceComponent implements OnInit{
   }*/
 
   onSubmit(): void {
+    // let salir = false;
+    // //verificar que no se repitan posiciones de cámaras
+    // this.deviceService.getDevices().subscribe({
+    //   next: (devices) => {
+    //     devices.forEach(device => {
+    //       console.log("device.position=" + device.position + " location: " + this.nuevoDispositivo.position);
+    //       if(device.position === this.nuevoDispositivo.position){
+    //         alert("Error, esa posición de cámara ya está tomada.");
+    //         salir = true;
+    //       }
+    //     })
+    //   }
+    // });
+
     this.errorMessage = null;
     if (this.isEditMode && this.deviceId) {
       this.deviceService.updateDevice(this.deviceId, this.nuevoDispositivo).subscribe({

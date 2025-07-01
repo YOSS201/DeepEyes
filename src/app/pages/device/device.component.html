@@ -54,31 +54,35 @@
   </button>
   <mat-table [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Name</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.name }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="status">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Status</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Estado</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.status }}</mat-cell>
     </ng-container>
+    <ng-container matColumnDef="position">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Posición</mat-header-cell>
+      <mat-cell *matCellDef="let device">{{ device.position }}</mat-cell>
+    </ng-container>
     <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Type</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.type || 'N/A'}}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="model">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Model</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Modelo</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.model || 'N/A'}}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="location">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Location</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Ubicación</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.location || 'N/A' }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="createdAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Created At</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Creación</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.createdAt | date:'medium' }}</mat-cell>
     </ng-container>
     <ng-container matColumnDef="updatedAt">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Updated At</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Actualización</mat-header-cell>
       <mat-cell *matCellDef="let device">{{ device.updatedAt | date:'medium' }}</mat-cell>
     </ng-container>
 

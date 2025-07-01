@@ -39,15 +39,15 @@ mat-form-field {
 }
 
 .alert-table {
-  width: 100%;
+  width: auto;
   border-radius: 8px;
   overflow: hidden;
 }
 
-.mat-header-cell {
-  background-color: #112D4E;
-  color: white;
-  font-weight: 600;
+mat-header-cell {
+  color: rgb(50, 50, 50);
+  font-weight: 500;
+  justify-content: center;
 }
 
 .mat-cell {
@@ -92,3 +92,24 @@ button[mat-flat-button] {
     grid-column: 1 / -1;
   }
 }
+
+.col-wid-1 {
+  width: 80px !important;
+  max-width: 80px !important;
+  min-width: 80px !important;
+  
+}
+
+.col-wid-2 {
+  width: 100px !important;
+  max-width: 100px !important;
+  min-width: 100px !important;
+}
+
+.col-wid-3 {
+  width: 200px !important;
+  max-width: 500px !important;
+  min-width: 80px !important;
+  overflow:visible;
+}
+

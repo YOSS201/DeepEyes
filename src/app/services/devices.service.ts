@@ -16,9 +16,10 @@ export class DeviceService {
     return this.http.post<DeviceResponse>("http://127.0.0.1:8000/devices/", device, { headers: { 'Content-Type': 'application/json' } });
   }
   
-  getDevices(name?: string, location?: string, type?: string): Observable<DeviceResponse[]> {
+  getDevices(name?: string, position?: string, location?: string, type?: string): Observable<DeviceResponse[]> {
     let params: any = {};
     if (name) params.name = name;
+    if (position) params.position = position;
     if (location) params.location = location;
     if (type) params.type = type;
 

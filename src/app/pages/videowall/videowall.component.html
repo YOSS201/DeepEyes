@@ -9,7 +9,7 @@
     <mat-nav-list>
       <mat-list-item *ngFor="let alert of alerts">
         <a [routerLink]="['/s/alertdetails/', alert.id]">
-          {{ alert.status | uppercase }} - [{{ alert.device.location }}]
+          {{ alert.status | uppercase }} - [{{ alert.device.name }}]
         </a>
       </mat-list-item>
     </mat-nav-list>
@@ -19,7 +19,7 @@
   <mat-sidenav-content>
     <div class="content">
       <mat-toolbar color="primary">
-        <span>Videowall</span>
+        <span>Videowall Deteccion: {{valor1}}</span>
       </mat-toolbar>
 
       <div class="container-fixed">
@@ -50,11 +50,10 @@
       </div>
 
       <!-- Botones de control -->
-      <div class="actions-fixed">
+      <!-- <div class="actions-fixed">
         <button mat-raised-button color="warn" (click)="startRecording()" [disabled]="isRecording">⏺ Grabar</button>
         <button mat-raised-button color="primary" (click)="stopRecording()" [disabled]="!isRecording">⏹ Detener</button>
-        <button mat-stroked-button color="accent" (click)="generateAlert()">⚠️ Alerta</button>
-      </div>
+      </div> -->
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

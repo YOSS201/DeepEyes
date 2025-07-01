@@ -6,28 +6,31 @@
     <!-- ALERTAS -->
     <div class="seccion">
       <h3>Alertas</h3>
+      <p>Notificaciones activadas: {{notif ? "Sí":"No"}}</p>
       <p><strong>Total:</strong> {{ totalAlertas }}</p>
       <p>Pendientes: {{ alertas.pendientes }}</p>
       <p>Confirmados: {{ alertas.confirmados }}</p>
       <p>Descartados: {{ alertas.descartados }}</p>
 
-      <p><strong>Hoy: {{ alertasHoy }}</strong></p>
+      <p><strong>Últimas 24hrs: {{ alertasHoy }}</strong></p>
       <p>Pendientes: {{ alertas.hoy.pendientes }}</p>
       <p>Confirmados: {{ alertas.hoy.confirmados }}</p>
       <p>Descartados: {{ alertas.hoy.descartados }}</p>
     </div>
 
+    
+
     <!-- CAMARAS -->
     <div class="seccion">
       <h3>Cámaras</h3>
-      <p><strong>Totales:</strong> {{ camaras.length + camarasInactivas }}</p>
+      <p><strong>Totales:</strong> {{ camarasActivas + camarasInactivas }}</p>
       <p>Activos: {{ camarasActivas }}</p>
       <p>Inactivos: {{ camarasInactivas }}</p>
 
-      <div class="camara-grid">
+      <!-- <div class="camara-grid">
         <img *ngFor="let cam of camaras" [src]="cam" class="cam-img" />
         <button mat-raised-button class="add-btn">+</button>
-      </div>
+      </div> -->
     </div>
 
     <!-- REPORTES -->

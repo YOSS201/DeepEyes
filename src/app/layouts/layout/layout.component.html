@@ -6,9 +6,15 @@
       <div class="sidebar-header">
         <mat-icon class="logo-icon">videocam</mat-icon>
         <span class="logo-text">DEEP EYES</span>
+        
       </div>
-
+      <h4 style="padding-left: 20px;">Bienvenido, {{nombre}}</h4> 
       <nav class="nav-links">
+        <button mat-button routerLink="/c/home" routerLinkActive="active-link">
+          <mat-icon>home</mat-icon>
+          <span>Dashboard</span>
+        </button>
+
         <button mat-button routerLink="/c/videowall" routerLinkActive="active-link">
           <mat-icon>video_library</mat-icon>
           <span>Videowall</span>
@@ -19,16 +25,16 @@
           <span>Alerta</span>
         </button>
 
-        <button mat-button routerLink="/c/report" routerLinkActive="active-link">
-          <mat-icon>history</mat-icon>
-          <span>Reportes</span>
-        </button>
-
         <button mat-button routerLink="/c/device" routerLinkActive="active-link">
           <mat-icon>devices</mat-icon>
           <span>Dispositivos</span>
         </button>
 
+        <button mat-button routerLink="/c/report" routerLinkActive="active-link">
+          <mat-icon>history</mat-icon>
+          <span>Reportes</span>
+        </button>
+        
         <button mat-button routerLink="/c/help" routerLinkActive="active-link">
         <mat-icon>help</mat-icon>
         <span>Ayuda</span>

@@ -14,6 +14,7 @@ import { AuthGuard } from './auth.guard';
 import { LayoutComponent } from './layouts/layout/layout.component';
 import { EmptyLayoutComponent } from './layouts/empty-layout/empty-layout.component';
 import { HelpComponent } from './pages/help/help.component';
+import { AddReportComponent } from './pages/report/add-report/add-report.component';
 
 
 
@@ -63,7 +64,7 @@ export const routes: Routes = [
       { path: 'register', component: RegisterComponent},
       { path: 'add-device', component: AddDeviceComponent, canActivate: [AuthGuard]},
       { path: 'add-device/:id', component: AddDeviceComponent, canActivate: [AuthGuard]},
-      { path:'create-report', component:CreateReportComponent, canActivate: [AuthGuard]},
+      { path:'add-report', component:AddReportComponent, canActivate: [AuthGuard]},
       { path:'alertdetails/:id', component:AlertDetailsComponent, canActivate: [AuthGuard]},
       { path: '', redirectTo: 'login', pathMatch: 'full' },
       { path: '**', redirectTo: 'login' }, // para que cualquier ruta incorrecta vaya a login
